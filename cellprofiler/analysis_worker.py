@@ -139,7 +139,6 @@ from cellprofiler.analysis import \
     SharedDictionaryRequest, Ack, UpstreamExit, ANNOUNCE_DONE, \
     OmeroLoginRequest, OmeroLoginReply
 import javabridge as J
-from cellprofiler.utilities.run_loop import enter_run_loop, stop_run_loop
 #
 # CellProfiler expects NaN as a result during calculation
 #
@@ -206,26 +205,27 @@ def main():
     except:
         pass
 
-    from cellprofiler.knime_bridge import KnimeBridgeServer
+    import cellprofiler.knime_bridge
+
     with AnalysisWorker(work_announce_address) as worker:
-        worker_thread = threading.Thread(target=worker.run,
-                                         name="WorkerThread")
+        worker_thread = threading.Thread(target=worker.run, name="WorkerThread")
+
         worker_thread.setDaemon(True)
+
         worker_thread.start()
-        with KnimeBridgeServer(the_zmq_context,
-                               knime_bridge_address,
-                               NOTIFY_ADDR, NOTIFY_STOP):
-            enter_run_loop()
+
+        with cellprofiler.knime_bridge.KnimeBridgeServer(the_zmq_context, knime_bridge_address, NOTIFY_ADDR, NOTIFY_STOP):
+            # enter_run_loop()
+
             worker_thread.join()
 
-    #
-    # Shutdown - need to handle some global cleanup here
-    #
     try:
-        from ilastik.core.jobMachine import GLOBAL_WM
+        import ilastik.core.jobMachine
+
         GLOBAL_WM.stopWorkers()
-    except:
-        logger.warn("Failed to stop Ilastik")
+    except ImportError:
+        pass
+
     try:
         cp_stop_vm()
     except:
@@ -300,8 +300,9 @@ class AnalysisWorker(object):
         self.notify_socket.close()
         clear_image_reader_cache()
         J.detach()
-        if self.with_stop_run_loop:
-            stop_run_loop()
+
+        # if self.with_stop_run_loop:
+        #     stop_run_loop()
 
     def run(self):
         from cellprofiler.pipeline import CancelledException
