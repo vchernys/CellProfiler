@@ -1,5 +1,6 @@
 before_install:
-  - pyenv versions
+  - pyenv install 2.7.11
+  - pyenv global 2.7.11
 dist: trusty
 install:
   - pip install -e .
