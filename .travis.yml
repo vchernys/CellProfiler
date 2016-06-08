@@ -57,6 +57,8 @@
 before_script:
   - pyenv global 2.7.10
 dist: trusty
+install:
+  - pip install --editable .
 notifications:
   email: false
 sudo: required
