@@ -1872,7 +1872,6 @@ EACH_PREFERENCE_HELP = (
     ("Warn if images are different sizes", SHOW_REPORT_BAD_SIZES_DLG_HELP),
     ("Show the parameter sampling menu", PARAMETER_SAMPLING_MENU_HELP),
     ("Maximum number of workers", MAX_WORKERS_HELP),
-    ("Temporary folder", TEMP_DIR_HELP),
     ("Save pipeline and/or file list in addition to project", SAVE_PIPELINE_WITH_PROJECT_HELP),
     ("BatchProfiler URL", BATCHPROFILER_URL_HELP)
 )
