@@ -10,27 +10,12 @@ can use HTML markup here and in the settings text; the Python HTML control
 does not fully support the HTML specification, so you may have to experiment
 to get it to display correctly.
 """
-#################################
-#
-# Imports from useful Python libraries
-#
-#################################
 
-import numpy as np
-from scipy.ndimage import gaussian_gradient_magnitude, correlate1d
-
-#################################
-#
-# Imports from CellProfiler
-#
-# The package aliases are the standard ones we use
-# throughout the code.
-#
-##################################
-
-import cellprofiler.image as cpi
-import cellprofiler.module as cpm
-import cellprofiler.setting as cps
+import cellprofiler.image
+import cellprofiler.module
+import cellprofiler.setting
+import numpy
+import scipy.ndimage
 
 ###################################
 #
@@ -58,7 +43,7 @@ GRADIENT_DIRECTION_Y = "Gradient direction - Y"
 #
 ###################################
 
-class ImageTemplate(cpm.Module):
+class ImageTemplate(cellprofiler.module.Module):
     ###############################################
     #
     # The module starts by declaring the name that's used for display,
@@ -88,7 +73,7 @@ class ImageTemplate(cpm.Module):
         # The ImageSubscriber gives your user a list of these images
         # which can then be used as inputs in your module.
         #
-        self.input_image_name = cps.ImageNameSubscriber(
+        self.input_image_name = cellprofiler.setting.ImageNameSubscriber(
                 # The text to the left of the edit box
                 "Input image name:",
                 # HTML help that gets displayed when the user presses the
@@ -102,7 +87,7 @@ class ImageTemplate(cpm.Module):
         # The ImageNameProvider makes the image available to subsequent
         # modules.
         #
-        self.output_image_name = cps.ImageNameProvider(
+        self.output_image_name = cellprofiler.setting.ImageNameProvider(
                 "Output image name:",
                 # The second parameter holds a suggested name for the image.
                 "OutputImage",
@@ -111,7 +96,7 @@ class ImageTemplate(cpm.Module):
         # Here's a choice box - the user gets a drop-down list of what
         # can be done.
         #
-        self.gradient_choice = cps.Choice(
+        self.gradient_choice = cellprofiler.setting.Choice(
                 "Gradient choice:",
                 # The choice takes a list of possibilities. The first one
                 # is the default - the one the user will typically choose.
@@ -142,7 +127,7 @@ class ImageTemplate(cpm.Module):
         #
         # A binary setting displays a checkbox.
         #
-        self.automatic_smoothing = cps.Binary(
+        self.automatic_smoothing = cellprofiler.setting.Binary(
                 "Automatically choose the smoothing scale?",
                 # The default value is to choose automatically
                 True,
@@ -155,7 +140,7 @@ class ImageTemplate(cpm.Module):
         # for the scale. The control will turn red if the user types in
         # an invalid scale.
         #
-        self.scale = cps.Float(
+        self.scale = cellprofiler.setting.Float(
                 "Scale:",
                 # The default value is 1 - a short-range scale
                 1,
@@ -232,21 +217,21 @@ class ImageTemplate(cpm.Module):
             # Pick the mode of the power spectrum - obviously this
             # is pretty hokey, not intended to really find a good number.
             #
-            fft = np.fft.fft2(pixels)
-            power2 = np.sqrt((fft * fft.conjugate()).real)
-            mode = np.argwhere(power2 == power2.max())[0]
-            scale = np.sqrt(np.sum((mode + .5) ** 2))
+            fft = numpy.fft.fft2(pixels)
+            power2 = numpy.sqrt((fft * fft.conjugate()).real)
+            mode = numpy.argwhere(power2 == power2.max())[0]
+            scale = numpy.sqrt(numpy.sum((mode + .5) ** 2))
         else:
             scale = self.scale.value
-        g = gaussian_gradient_magnitude(pixels, scale)
+        g = scipy.ndimage.gaussian_gradient_magnitude(pixels, scale)
         if self.gradient_choice == GRADIENT_MAGNITUDE:
             output_pixels = g
         else:
             # Numpy uses i and j instead of x and y. The x axis is 1
             # and the y axis is 0
-            x = correlate1d(g, [-1, 0, 1], 1)
-            y = correlate1d(g, [-1, 0, 1], 0)
-            norm = np.sqrt(x ** 2 + y ** 2)
+            x = scipy.ndimage.correlate1d(g, [-1, 0, 1], 1)
+            y = scipy.ndimage.correlate1d(g, [-1, 0, 1], 0)
+            norm = numpy.sqrt(x ** 2 + y ** 2)
             if self.gradient_choice == GRADIENT_DIRECTION_X:
                 output_pixels = .5 + x / norm / 2
             else:
@@ -256,7 +241,7 @@ class ImageTemplate(cpm.Module):
         # about the parent image - the child inherits the parent's
         # cropping and masking, but it's not absolutely necessary
         #
-        output_image = cpi.Image(output_pixels, parent_image=input_image)
+        output_image = cellprofiler.image.Image(output_pixels, parent_image=input_image)
         image_set.add(output_image_name, output_image)
         #
         # Save intermediate results for display if the window frame is on
