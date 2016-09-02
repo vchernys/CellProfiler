@@ -36,9 +36,9 @@ GRADIENT_DIRECTION_Y = "Gradient direction - Y"
 #
 # The module class
 #
-# Your module should "inherit" from cellprofiler.cpmodule.CPModule.
-# This means that your module will use the methods from CPModule unless
-# you re-implement them. You can let CPModule do most of the work and
+# Your module should "inherit" from cellprofiler.module.Module.
+# This means that your module will use the methods from Module unless
+# you re-implement them. You can let Module do most of the work and
 # implement only what you need.
 #
 ###################################
