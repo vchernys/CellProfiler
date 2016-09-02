@@ -9,73 +9,59 @@ The text you see here will be displayed as the help for your module. You
 can use HTML markup here and in the settings text; the Python HTML control
 does not fully support the HTML specification, so you may have to experiment
 to get it to display correctly.
+
+In this example, we'll create a module that performs a morphological operation
+(closing, dilation, erosion, opening) on an image.
 """
 
+# List the libraries this module uses at the top of the file.
+# Add imports as you need them while you're developing this module.
+# Remove any unused imports when you're finished developing.
 import cellprofiler.image
 import cellprofiler.module
 import cellprofiler.setting
-import numpy
-import scipy.ndimage
-
-###################################
-#
-# Constants
-#
-# It's good programming practice to replace things like strings with
-# constants if they will appear more than once in your program. That way,
-# if someone wants to change the text, that text will change everywhere.
-# Also, you can't misspell it by accident.
-###################################
-
-GRADIENT_MAGNITUDE = "Gradient magnitude"
-GRADIENT_DIRECTION_X = "Gradient direction - X"
-GRADIENT_DIRECTION_Y = "Gradient direction - Y"
+import skimage.morphology
 
 
-###################################
-#
-# The module class
-#
-# Your module should "inherit" from cellprofiler.module.Module.
-# This means that your module will use the methods from Module unless
-# you re-implement them. You can let Module do most of the work and
-# implement only what you need.
-#
-###################################
+# All modules inherit from cellprofiler.module.Module, which defines the base functionality of all modules.
+# Some functionality is specific to this module, and we'll define it in the methods below.
 class ImageTemplate(cellprofiler.module.Module):
-    ###############################################
+    # A module starts by declaring the following information:
     #
-    # The module starts by declaring the name that's used for display,
-    # the category under which it is stored and the variable revision
-    # number which can be used to provide backwards compatibility if
-    # you add user-interface functionality later.
+    #   module_name: name used for display in the CellProfiler GUI
+    #   category: the category under which this module can be found
+    #   variable_revision_number: the latest version of this module
     #
-    ###############################################
+    # The variable revision number starts at 1 and must be incremented whenever your module is modified.
     module_name = "ImageTemplate"
     category = "Image Processing"
     variable_revision_number = 1
 
-    ###############################################
-    #
-    # create_settings is where you declare the user interface elements
-    # (the "settings") which the user will use to customize your module.
-    #
-    # You can look at other modules and in cellprofiler.settings for
-    # settings you can use.
-    #
-    ################################################
+    # Declare user interface selements (called "settings").
+    # Every setting your module uses must be declared here.
+    # You can look at other modules and in cellprofiler.settings for other available settings.
     def create_settings(self):
+        # Most CellProfiler settings have use the following structure:
         #
-        # The ImageNameSubscriber "subscribes" to all ImageNameProviders in
-        # prior modules. Modules before yours will put images into CellProfiler.
-        # The ImageSubscriber gives your user a list of these images
-        # which can then be used as inputs in your module.
+        #   self.option = cellprofiler.setting.SettingType(
+        #     text="Text briefly describing this setting",
+        #     value=some_value,
+        #     doc="""Helpful information about this setting."""
+        #   )
         #
+        # where:
+        #    self.option: saves the setting as the variable self.option which you can reference in other methods.
+        #    cellprofiler.setting.SettingType: is the type of setting (e.g., cellprofiler.setting.Choice).
+        #    some_value: is the initial value of the setting. Usually this is optional but can be used to set defaults.
+        #
+        # This module uses a few very common settings. We describe how to use them below.
+
+        # Image processing modules need an image to process.
+        # Use cellprofiler.setting.ImageNameSubscriber to provide users with a list of names of available images.
+        # The list of names is automatically generated based on earlier modules.
+        # The selected name is the name of the image this module will process.
         self.input_image_name = cellprofiler.setting.ImageNameSubscriber(
-            # The text to the left of the edit box
-            "Input image name:",
-            # HTML help that gets displayed when the user presses the
-            # help button to the right of the edit box
+            "Input image name",
             doc="""This is the image that the module operates on. You can
             choose any image that is made available by a prior module.
             <br>
@@ -88,76 +74,23 @@ class ImageTemplate(cellprofiler.module.Module):
         # modules.
         #
         self.output_image_name = cellprofiler.setting.ImageNameProvider(
-            "Output image name:",
+            "Output image name",
             # The second parameter holds a suggested name for the image.
             "OutputImage",
             doc="""This is the image resulting from the operation."""
         )
 
-        #
-        # Here's a choice box - the user gets a drop-down list of what
-        # can be done.
-        #
-        self.gradient_choice = cellprofiler.setting.Choice(
-            "Gradient choice:",
-            # The choice takes a list of possibilities. The first one
-            # is the default - the one the user will typically choose.
-            [GRADIENT_MAGNITUDE, GRADIENT_DIRECTION_X, GRADIENT_DIRECTION_Y],
-            #
-            # Here, in the documentation, we do a little trick so that
-            # we use the actual text that's displayed in the documentation.
-            #
-            # %(GRADIENT_MAGNITUDE)s will get changed into "Gradient magnitude"
-            # etc. Python will look in globals() for the "GRADIENT_" names
-            # and paste them in where it sees %(GRADIENT_...)s
-            #
-            # The <ul> and <li> tags make a neat bullet-point list in the docs
-            #
-            doc="""Choose what to calculate:
-            <ul>
-            <li><i>%(GRADIENT_MAGNITUDE)s</i> to calculate the
-            magnitude of the gradient at each pixel.</li>
-            <li><i>%(GRADIENT_DIRECTION_X)s</i> to get the relative contribution
-            of the gradient in the X direction (.5 = no contribution,
-            0 to .5 = decreasing with increasing X, .5 to 1 = increasing
-            with increasing X).</li>
-            <li><i>%(GRADIENT_DIRECTION_Y)s</i> to get the relative
-            contribution of the gradient in the Y direction.</li></ul>
-            """ % globals()
+        self.operation = cellprofiler.setting.Choice(
+            "Operation",
+            [
+                "closing",
+                "dilation",
+                "erosion",
+                "opening"
+            ]
         )
 
-        #
-        # A binary setting displays a checkbox.
-        #
-        self.automatic_smoothing = cellprofiler.setting.Binary(
-            "Automatically choose the smoothing scale?",
-            # The default value is to choose automatically
-            True,
-            doc="""The module will automatically choose a
-            smoothing scale for you if you leave this checked."""
-        )
-
-        #
-        # We do a little smoothing which supplies a scale to the gradient.
-        #
-        # We use a float setting so that the user can give us a number
-        # for the scale. The control will turn red if the user types in
-        # an invalid scale.
-        #
-        self.scale = cellprofiler.setting.Float(
-            "Scale:",
-            # The default value is 1 - a short-range scale
-            1,
-            # We don't let the user type in really small values
-            minval=.1,
-            # or large values
-            maxval=100,
-            doc="""This is a scaling factor that supplies the sigma for
-            a gaussian that's used to smooth the image. The gradient is
-            calculated on the smoothed image, so large scales will give
-            you long-range gradients and small scales will give you
-            short-range gradients"""
-        )
+        self.structuring_element = cellprofiler.setting.StructuringElement()
 
     #
     # The "settings" method tells CellProfiler about the settings you
@@ -169,9 +102,8 @@ class ImageTemplate(cellprofiler.module.Module):
         return [
             self.input_image_name,
             self.output_image_name,
-            self.gradient_choice,
-            self.automatic_smoothing,
-            self.scale
+            self.operation,
+            self.structuring_element
         ]
 
     #
@@ -183,20 +115,12 @@ class ImageTemplate(cellprofiler.module.Module):
     # for display.
     #
     def visible_settings(self):
-        result = [
+        return [
             self.input_image_name,
             self.output_image_name,
-            self.gradient_choice,
-            self.automatic_smoothing
+            self.operation,
+            self.structuring_element
         ]
-
-        #
-        # Show the user the scale only if self.wants_smoothing is checked
-        #
-        if not self.automatic_smoothing:
-            result += [self.scale]
-
-        return result
 
     #
     # CellProfiler calls "run" on each image set in your pipeline.
@@ -211,6 +135,10 @@ class ImageTemplate(cellprofiler.module.Module):
         input_image_name = self.input_image_name.value
 
         output_image_name = self.output_image_name.value
+
+        operation = self.operation.value
+
+        structuring_element = self.structuring_element.value
 
         #
         # Get the image set. The image set has all of the images in it.
@@ -229,40 +157,14 @@ class ImageTemplate(cellprofiler.module.Module):
         #
         pixels = input_image.pixel_data
 
-        #
-        # Get the smoothing parameter
-        #
-        if self.automatic_smoothing:
-            # Pick the mode of the power spectrum - obviously this
-            # is pretty hokey, not intended to really find a good number.
-            #
-            fft = numpy.fft.fft2(pixels)
-
-            power2 = numpy.sqrt((fft * fft.conjugate()).real)
-
-            mode = numpy.argwhere(power2 == power2.max())[0]
-
-            scale = numpy.sqrt(numpy.sum((mode + .5) ** 2))
+        if operation == "closing":
+            output_pixels = skimage.morphology.closing(pixels, structuring_element)
+        elif operation == "dilation":
+            output_pixels = skimage.morphology.dilation(pixels, structuring_element)
+        elif operation == "erosion":
+            output_pixels = skimage.morphology.erosion(pixels, structuring_element)
         else:
-            scale = self.scale.value
-
-        gradient = scipy.ndimage.gaussian_gradient_magnitude(pixels, scale)
-
-        if self.gradient_choice == GRADIENT_MAGNITUDE:
-            output_pixels = gradient
-        else:
-            # Numpy uses i and j instead of x and y. The x axis is 1
-            # and the y axis is 0
-            x = scipy.ndimage.correlate1d(gradient, [-1, 0, 1], 1)
-
-            y = scipy.ndimage.correlate1d(gradient, [-1, 0, 1], 0)
-
-            norm = numpy.sqrt(x ** 2 + y ** 2)
-
-            if self.gradient_choice == GRADIENT_DIRECTION_X:
-                output_pixels = .5 + x / norm / 2
-            else:
-                output_pixels = .5 + y / norm / 2
+            output_pixels = skimage.morphology.opening(pixels, structuring_element)
 
         #
         # Make an image object. It's nice if you tell CellProfiler
@@ -278,8 +180,6 @@ class ImageTemplate(cellprofiler.module.Module):
         #
         if self.show_window:
             workspace.display_data.input_pixels = pixels
-
-            workspace.display_data.gradient = gradient
 
             workspace.display_data.output_pixels = output_pixels
 
@@ -305,19 +205,6 @@ class ImageTemplate(cellprofiler.module.Module):
         )
 
         lead_subplot = figure.subplot(0, 0)
-
-        #
-        # Show the user the gradient image, linking it to the first
-        # so that they zoom and pan together
-        #
-        figure.subplot_imshow_grayscale(
-            1,
-            0,
-            workspace.display_data.gradient,
-            title="Gradient",
-            sharex=lead_subplot,
-            sharey=lead_subplot
-        )
 
         #
         # Show the user the final image
