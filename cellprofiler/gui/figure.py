@@ -1948,13 +1948,8 @@ def show_image(url, parent=None, needs_raise_after=True):
     """
     filename = url[(url.rfind("/") + 1):]
     try:
-        if url.lower().endswith(".mat"):
-            from scipy.io.matlab.mio import loadmat
-            from cellprofiler.modules.loadimages import url2pathname
-            image = loadmat(url2pathname(url), struct_as_record=True)["Image"]
-        else:
-            from bioformats import load_image_url
-            image = load_image_url(url)
+        from bioformats import load_image_url
+        image = load_image_url(url)
     except IOError:
         wx.MessageBox('Failed to open file, "%s"' % filename,
                       caption="File open error")

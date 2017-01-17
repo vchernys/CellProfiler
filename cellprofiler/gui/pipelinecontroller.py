@@ -1607,16 +1607,6 @@ class PipelineController(object):
             return
         path = url2pathname(paths[0])
         ext = os.path.splitext(path)[1]
-        if ext.lower() == ".mat":
-            # Maybe it's an image?
-            from scipy.io.matlab.mio import loadmat
-            try:
-                maybe_image = loadmat(os.path.abspath(path))
-                if "Image" in maybe_image.keys():
-                    show_image(paths[0], self.__frame)
-                    return
-            except:
-                pass
         if len(ext) > 1 and ext[1:] in cellprofiler.preferences.EXT_PROJECT_CHOICES:
             result = wx.MessageBox(
                 'Do you want to load the project, \n'
