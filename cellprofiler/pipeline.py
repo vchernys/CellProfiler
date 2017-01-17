@@ -13,14 +13,6 @@ import numpy as np
 import scipy
 import scipy.io.matlab
 
-try:
-    # implemented in scipy.io.matlab.miobase.py@5582
-    from scipy.io.matlab.miobase import MatReadError
-
-    has_mat_read_error = True
-except:
-    has_mat_read_error = False
-
 import os
 import StringIO  # XXX - replace with cStringIO?
 import sys
@@ -145,8 +137,6 @@ IMAGE_PLANE_DESCRIPTOR_VERSION = 1
 H_VERSION = 'Version'
 H_SVN_REVISION = 'SVNRevision'
 H_DATE_REVISION = 'DateRevision'
-'''A pipeline file header variable for faking a matlab pipeline file'''
-H_FROM_MATLAB = 'FromMatlab'
 '''The GIT hash of the revision'''
 H_GIT_HASH = 'GitHash'
 
@@ -823,8 +813,6 @@ class Pipeline(object):
             elif kwd in (H_SVN_REVISION, H_DATE_REVISION):
                 pipeline_version = int(value)
                 CURRENT_VERSION = int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
-            elif kwd == H_FROM_MATLAB:
-                from_matlab = (value == "True")
             elif kwd == H_MODULE_COUNT:
                 module_count = int(value)
             elif kwd == H_HAS_IMAGE_PLANE_DETAILS:
