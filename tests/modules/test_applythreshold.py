@@ -89,7 +89,7 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertEqual(module.low_or_high, A.TH_BELOW_THRESHOLD)
         self.assertEqual(module.threshold_scope, T.TM_MANUAL)
         self.assertAlmostEqual(module.manual_threshold.value, .1)
-        self.assertEqual(module.threshold_smoothing_choice, A.TSM_NONE)
+        self.assertEqual(module.threshold_smoothing_choice, I.TSM_NONE)
 
     def test_01_02_load_v2(self):
         '''Load a variable_revision_number = 2 pipeline'''
@@ -178,9 +178,9 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertEqual(module.threshold_range.min, 0)
         self.assertEqual(module.threshold_range.max, 1)
         self.assertEqual(module.threshold_correction_factor.value, 1)
-        self.assertEqual(module.two_class_otsu.value, A.O_THREE_CLASS)
-        self.assertEqual(module.use_weighted_variance.value, A.O_ENTROPY)
-        self.assertEqual(module.assign_middle_to_foreground.value, A.O_BACKGROUND)
+        self.assertEqual(module.two_class_otsu.value, I.O_THREE_CLASS)
+        self.assertEqual(module.use_weighted_variance.value, I.O_ENTROPY)
+        self.assertEqual(module.assign_middle_to_foreground.value, I.O_BACKGROUND)
 
     def test_01_07_load_v7(self):
         data = r"""CellProfiler Pipeline: http://www.cellprofiler.org
