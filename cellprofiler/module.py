@@ -100,48 +100,6 @@ class Module(object):
         """
         pass
 
-    def create_from_handles(self, handles, module_num):
-        """Fill a module with the information stored in the handles structure for module # ModuleNum
-
-        Returns a module with the settings decanted from the handles.
-        If the revision is old, a different and compatible module can be returned.
-        """
-        self.__module_num = module_num
-        idx = module_num - 1
-        settings = handles[cpp.SETTINGS][0, 0]
-        setting_values = []
-        self.__notes = []
-        if (settings.dtype.fields.has_key(cpp.MODULE_NOTES) and
-                    settings[cpp.MODULE_NOTES].shape[1] > idx):
-            n = settings[cpp.MODULE_NOTES][0, idx].flatten()
-            for x in n:
-                if isinstance(x, np.ndarray):
-                    if len(x) == 0:
-                        x = ''
-                    else:
-                        x = x[0]
-                self.__notes.append(x)
-        if settings.dtype.fields.has_key(cpp.SHOW_WINDOW):
-            self.__show_window = settings[cpp.SHOW_WINDOW][0, idx] != 0
-        if settings.dtype.fields.has_key(cpp.BATCH_STATE):
-            # convert from uint8 to array of one string to avoid long
-            # arrays, which get truncated by numpy repr()
-            self.batch_state = np.array(settings[cpp.BATCH_STATE][0, idx].tostring())
-        setting_count = settings[cpp.NUMBERS_OF_VARIABLES][0, idx]
-        variable_revision_number = settings[cpp.VARIABLE_REVISION_NUMBERS][0, idx]
-        module_name = settings[cpp.MODULE_NAMES][0, idx][0]
-        for i in range(0, setting_count):
-            value_cell = settings[cpp.VARIABLE_VALUES][idx, i]
-            if isinstance(value_cell, np.ndarray):
-                if np.product(value_cell.shape) == 0:
-                    setting_values.append('')
-                else:
-                    setting_values.append(str(value_cell[0]))
-            else:
-                setting_values.append(value_cell)
-        self.set_settings_from_values(setting_values, variable_revision_number,
-                                      module_name)
-
     def prepare_settings(self, setting_values):
         """Do any sort of adjustment to the settings required for the given values
 

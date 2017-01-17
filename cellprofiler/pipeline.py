@@ -607,54 +607,6 @@ class Pipeline(object):
             return h.hexdigest()
         return h.digest()
 
-    def create_from_handles(self, handles):
-        """Read a pipeline's modules out of the handles structure
-
-        """
-        self.__modules = []
-        try:
-            settings = handles[SETTINGS][0, 0]
-            module_names = settings[MODULE_NAMES]
-        except Exception, instance:
-            logger.error("Failed to load pipeline", exc_info=True)
-            e = LoadExceptionEvent(instance, None)
-            self.notify_listeners(e)
-            return
-        module_count = module_names.shape[1]
-        real_module_num = 1
-        for module_num in range(1, module_count + 1):
-            idx = module_num - 1
-            module_name = module_names[0, idx][0]
-            module = None
-            try:
-                module = self.instantiate_module(module_name)
-                module.create_from_handles(handles, module_num)
-                module.module_num = real_module_num
-            except Exception, instance:
-                logger.error("Failed to load pipeline", exc_info=True)
-                number_of_variables = settings[NUMBERS_OF_VARIABLES][0, idx]
-                module_settings = [settings[VARIABLE_VALUES][idx, i]
-                                   for i in range(number_of_variables)]
-                module_settings = [('' if np.product(x.shape) == 0
-                                    else str(x[0])) if isinstance(x, np.ndarray)
-                                   else str(x)
-                                   for x in module_settings]
-
-                event = LoadExceptionEvent(instance, module, module_name,
-                                           module_settings)
-                self.notify_listeners(event)
-                if event.cancel_run:
-                    # The pipeline is somewhat loaded at this point
-                    # so we break the loop and clean up as well as we can
-                    break
-            if module is not None:
-                self.__modules.append(module)
-                real_module_num += 1
-        for module in self.__modules:
-            module.post_pipeline_load(self)
-
-        self.notify_listeners(PipelineLoadedEvent())
-
     def instantiate_module(self, module_name):
         import cellprofiler.modules
         return cellprofiler.modules.instantiate_module(module_name)
@@ -806,32 +758,6 @@ class Pipeline(object):
                 self.load(StringIO.StringIO(pipeline_text))
                 return
 
-        if has_mat_read_error:
-            try:
-                handles = scipy.io.matlab.mio.loadmat(fd_or_filename,
-                                                      struct_as_record=True)
-            except MatReadError:
-                logging.error("Caught exception in Matlab reader\n", exc_info=True)
-                e = MatReadError(
-                        "%s is an unsupported .MAT file, most likely a measurements file.\nYou can load this as a pipeline if you load it as a pipeline using CellProfiler 1.0 and then save it to a different file.\n" %
-                        fd_or_filename)
-                self.notify_listeners(LoadExceptionEvent(e, None))
-                return
-            except Exception, e:
-                logging.error("Tried to load corrupted .MAT file: %s\n" % fd_or_filename,
-                              exc_info=True)
-                self.notify_listeners(LoadExceptionEvent(e, None))
-                return
-        else:
-            handles = scipy.io.matlab.mio.loadmat(fd_or_filename,
-                                                  struct_as_record=True)
-
-        if handles.has_key("handles"):
-            #
-            # From measurements...
-            #
-            handles = handles["handles"][0, 0]
-        self.create_from_handles(handles)
         self.__settings = [self.capture_module_settings(module)
                            for module in self.modules(False)]
         self.__undo_stack = []

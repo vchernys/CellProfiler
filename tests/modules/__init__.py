@@ -100,41 +100,6 @@ class testExampleImagesDirectory(unittest.TestCase):
                         "You need to have the example images checked out to run these tests")
 
 
-def load_pipeline(test_case, encoded_data):
-    """Load a pipeline from base-64 encoded data
-
-    test_case - an instance of unittest.TestCase
-    encoded_data - a pipeline encoded using base-64
-    The magic incantation to do the above is the following:
-    import base64
-    fd = open('my_PIPE.mat','rb')
-    bindata = fd.read()
-    fd.close()
-    b64data = base64.b64encode(bindata)
-    """
-    import cellprofiler.pipeline
-
-    (matfd, matpath) = tempfile.mkstemp('.mat')
-    matfh = os.fdopen(matfd, 'wb')
-    try:
-        data = base64.b64decode(encoded_data)
-        matfh.write(data)
-        matfh.flush()
-        pipeline = cellprofiler.pipeline.Pipeline()
-        handles = scipy.io.matlab.mio.loadmat(matpath, struct_as_record=True)
-    finally:
-        matfh.close()
-
-    def blowup(pipeline, event):
-        if isinstance(event, (cellprofiler.pipeline.RunExceptionEvent,
-                              cellprofiler.pipeline.LoadExceptionEvent)):
-            test_case.assertFalse(event.error.message)
-
-    pipeline.add_listener(blowup)
-    pipeline.create_from_handles(handles)
-    return pipeline
-
-
 def maybe_download_example_image(folders, file_name, shape=None):
     '''Download the given ExampleImages file if not in the directory
 
