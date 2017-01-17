@@ -1,130 +1,125 @@
-'''<b>Calculate Statistics</b> calculates measures of assay quality 
-(V and Z' factors) and dose response data (EC50) for all measured features
-made from images.
+"""
+<b>Calculate Statistics</b> calculates measures of assay quality (V and Z' factors) and dose response data (EC50) for
+all measured features made from images.
 <hr>
-The V and Z' factors are statistical measures of assay quality and are
-calculated for each per-image measurement and for each average per-object
-measurement that you have made in the pipeline. Placing
-this module at the end of a pipeline in order to calculate these values allows
-you to identify which measured features are most powerful for distinguishing
-positive and negative control samples, or for accurately quantifying the assay's
-response to dose. These measurements will be calculated for all
-measured values (Intensity, AreaShape, Texture, etc.). These measurements
-can be exported as the "Experiment" set of data.
-
+The V and Z' factors are statistical measures of assay quality and are calculated for each per-image measurement and
+for each average per-object measurement that you have made in the pipeline. Placing this module at the end of a
+pipeline in order to calculate these values allows you to identify which measured features are most powerful for
+distinguishing positive and negative control samples, or for accurately quantifying the assay's response to dose. These
+measurements will be calculated for all measured values (Intensity, AreaShape, Texture, etc.). These measurements can
+be exported as the "Experiment" set of data.
 <h4>Available measurements</h4>
-
 <ul>
-<li><b>Experiment features:</b> Whereas most CellProfiler measurements are calculated for each object (per-object)
-or for each image (per-image), this module produces <i>per-experiment</i> values;
-for example, one Z' factor is calculated for each measurement, across the entire analysis run.
-<ul>
-<li><i>Zfactor:</i> The Z'-factor indicates how well separated the positive and negative controls are.
-A Z'-factor &gt; 0 is potentially screenable; a Z'-factor &gt; 0.5 is considered an excellent assay.
-The formula is 1 &minus 3 &times; (&sigma;<sub>p</sub> + &sigma;<sub>n</sub>)/|&mu;<sub>p</sub> - &mu;<sub>n</sub>|
-where &sigma;<sub>p</sub> and &sigma;<sub>n</sub> are the standard deviations of the positive and negative controls,
-and &mu;<sub>p</sub> and &mu;<sub>n</sub> are the means of the positive and negative controls.</li>
-<li><i>Vfactor:</i> The V-factor is a generalization of the Z'-factor, and is
-calculated as 1 &minus 6 &times; mean(&sigma;)/|&mu;<sub>p</sub> - &mu;<sub>n</sub>| where
-&sigma; are the standard deviations of the data, and &mu;<sub>p</sub> and &mu;<sub>n</sub>
-are defined as above.</li>
-<li><i>EC50:</i> The half maximal effective concentration (EC50) is the concentration of a
-treatment required to induce a response which is 50%% of the maximal response.</li>
-<li><i>OneTailedZfactor:</i> This measure is an attempt to overcome a limitation of
-the original Z'-factor formulation (it assumes a Gaussian distribution) and is
-informative for populations with moderate or high amounts of skewness. In these
-cases, long tails opposite to the mid-range point lead to a high standard deviation
-for either population, which results in a low Z' factor even though the population
-means and samples between the means may be well-separated. Therefore, the
-one-tailed Z' factor is calculated with the same formula but using only those samples that lie
-between the positive/negative population means. <b>This is not yet a well established
-measure of assay robustness, and should be considered experimental.</b></li>
-</ul>
-</li>
-</ul>
-
-For both Z' and V factors, the highest possible value (best assay
-quality) is 1, and they can range into negative values (for assays where
-distinguishing between positive and negative controls is difficult or
-impossible). The Z' factor is based only on positive and negative controls. The V
-factor is based on an entire dose-response curve rather than on the
-minimum and maximum responses. When there are only two doses in the assay
-(positive and negative controls only), the V factor will equal the Z'
-factor.
-
-<p><i>Note:</i> If the standard deviation of a measured feature is zero for a
-particular set of samples (e.g., all the positive controls), the Z' and V
-factors will equal 1 despite the fact that the assay quality is poor.
-This can occur when there is only one sample at each dose.
-This also occurs for some non-informative measured features, like the
+    <li>
+        <b>Experiment features:</b> Whereas most CellProfiler measurements are calculated for each object (per-object)
+        or for each image (per-image), this module produces <i>per-experiment</i> values; for example, one Z' factor is
+        calculated for each measurement, across the entire analysis run.
+        <ul>
+            <li><i>Zfactor:</i> The Z'-factor indicates how well separated the positive and negative controls are. A
+            Z'-factor &gt; 0 is potentially screenable; a Z'-factor &gt; 0.5 is considered an excellent assay. The
+            formula is 1 &minus 3 &times; (&sigma;<sub>p</sub> + &sigma;<sub>n</sub>)/|&mu;<sub>p</sub> -
+            &mu;<sub>n</sub>| where &sigma;<sub>p</sub> and &sigma;<sub>n</sub> are the standard deviations of the
+            positive and negative controls, and &mu;<sub>p</sub> and &mu;<sub>n</sub> are the means of the positive and
+            negative controls.</li>
+            <li><i>Vfactor:</i> The V-factor is a generalization of the Z'-factor, and is calculated as 1 &minus 6
+            &times; mean(&sigma;)/|&mu;<sub>p</sub> - &mu;<sub>n</sub>| where &sigma; are the standard deviations of
+            the data, and &mu;<sub>p</sub> and &mu;<sub>n</sub> are defined as above.</li>
+            <li><i>EC50:</i> The half maximal effective concentration (EC50) is the concentration of a treatment
+            required to induce a response which is 50%% of the maximal response.</li>
+            <li><i>OneTailedZfactor:</i> This measure is an attempt to overcome a limitation of the original Z'-factor
+            formulation (it assumes a Gaussian distribution) and is informative for populations with moderate or high
+            amounts of skewness. In these cases, long tails opposite to the mid-range point lead to a high standard
+            deviation for either population, which results in a low Z' factor even though the population means and
+            samples between the means may be well-separated. Therefore, the one-tailed Z' factor is calculated with the
+            same formula but using only those samples that lie between the positive/negative population means. <b>This
+            is not yet a well established measure of assay robustness, and should be considered experimental.</b></li>
+        </ul>
+    </li>
+</ul>For both Z' and V factors, the highest possible value (best assay quality) is 1, and they can range into negative
+values (for assays where distinguishing between positive and negative controls is difficult or impossible). The Z'
+factor is based only on positive and negative controls. The V factor is based on an entire dose-response curve rather
+than on the minimum and maximum responses. When there are only two doses in the assay (positive and negative controls
+only), the V factor will equal the Z' factor.
+<p><i>Note:</i> If the standard deviation of a measured feature is zero for a particular set of samples (e.g., all the
+positive controls), the Z' and V factors will equal 1 despite the fact that the assay quality is poor. This can occur
+when there is only one sample at each dose. This also occurs for some non-informative measured features, like the
 number of cytoplasm compartments per cell, which is always equal to 1.</p>
-
-<p>This module can create MATLAB scripts that display the EC50 curves for
-each measurement. These scripts will require MATLAB and the statistics
-toolbox in order to run. See <a href='#wants_save_figure'>
-<i>Create dose/response plots?</i></a> below.</p>
-
+<p>This module can create MATLAB scripts that display the EC50 curves for each measurement. These scripts will require
+MATLAB and the statistics toolbox in order to run. See <a href='#wants_save_figure'><i>Create dose/response
+plots?</i></a> below.</p>
 <h4>References</h4>
 <ul>
-<li><i>Z' factor:</i> Zhang JH, Chung TD, et al. (1999) "A
-simple statistical parameter for use in evaluation and validation of high
-throughput screening assays" <i>J Biomolecular Screening</i> 4(2): 67-73.
-<a href="http://dx.doi.org/10.1177/108705719900400206">(link)</a></li>
-<li><i>V factor:</i> Ravkin I (2004): Poster #P12024 - Quality
-Measures for Imaging-based Cellular Assays. <i>Society for Biomolecular
-Screening Annual Meeting Abstracts</i>. </li>
-<li>Code for the calculation of Z' and V factors was kindly donated by
-<a href="http://www.ravkin.net">Ilya Ravkin</a>. Carlos
-Evangelista donated his copyrighted dose-response-related code.</li>
+    <li>
+        <i>Z' factor:</i> Zhang JH, Chung TD, et al. (1999) "A simple statistical parameter for use in evaluation and
+        validation of high throughput screening assays" <i>J Biomolecular Screening</i> 4(2): 67-73. <a href=
+        "http://dx.doi.org/10.1177/108705719900400206">(link)</a>
+    </li>
+    <li><i>V factor:</i> Ravkin I (2004): Poster #P12024 - Quality Measures for Imaging-based Cellular Assays.
+    <i>Society for Biomolecular Screening Annual Meeting Abstracts</i>.</li>
+    <li>Code for the calculation of Z' and V factors was kindly donated by <a href="http://www.ravkin.net">Ilya
+    Ravkin</a>. Carlos Evangelista donated his copyrighted dose-response-related code.
+    </li>
 </ul>
-
 <p><i>Example format for a file to be loaded by <b>LoadData</b> for this module:</i><br>
-
-<b>LoadData</b> loads information from a CSV file. The first line of this file is a
-header that names the items.
-Each subsequent line represents data for one image cycle, so your file should have
-the header line plus one line per image to be processed. You can also make a
-file for <b>LoadData</b> to load that contains the positive/negative control and
-dose designations <i>plus</i> the image file names to be processed, which is a good way
-to guarantee that images are matched with the correct data. The control and dose
-information can be designated in one of two ways:
+<b>LoadData</b> loads information from a CSV file. The first line of this file is a header that names the items. Each
+subsequent line represents data for one image cycle, so your file should have the header line plus one line per image
+to be processed. You can also make a file for <b>LoadData</b> to load that contains the positive/negative control and
+dose designations <i>plus</i> the image file names to be processed, which is a good way to guarantee that images are
+matched with the correct data. The control and dose information can be designated in one of two ways:</p>
 <ul>
-<li>As metadata (so that the column header is prefixed with
-the "Metadata_" tag). "Metadata" is the category and the name after the underscore
-is the measurement.</li>
-<li>As some other type of data, in which case the header needs
-to be of the form <i>&lt;prefix&gt;_&lt;measurement&gt;</i>. Select <i>&lt;prefix&gt;</i> as
-the category and <i>&lt;measurement&gt;</i> as the measurement.</li>
-</ul>
-Here is an example file:<br><br>
-<code>
-<tt><table>
-<tr><td>Image_FileName_CY3,</td><td>Image_PathName_CY3,</td><td>Data_Control,</td><td>Data_Dose</td></tr>
-<tr><td>"Plate1_A01.tif",</td><td>"/images",</td><td>-1,</td><td>0</td></tr>
-<tr><td>"Plate1_A02.tif",</td><td>"/images",</td><td>1,</td><td>1E10</td></tr>
-<tr><td>"Plate1_A03.tif",</td><td>"/images",</td><td>0,</td><td>3E4</td></tr>
-<tr><td>"Plate1_A04.tif",</td><td>"/images",</td><td>0,</td><td>5E5</td></tr>
-</table></tt>
-</code>
+    <li>As metadata (so that the column header is prefixed with the "Metadata_" tag). "Metadata" is the category and
+    the name after the underscore is the measurement.</li>
+    <li>As some other type of data, in which case the header needs to be of the form
+    <i>&lt;prefix&gt;_&lt;measurement&gt;</i>. Select <i>&lt;prefix&gt;</i> as the category and
+    <i>&lt;measurement&gt;</i> as the measurement.</li>
+</ul>Here is an example file:<br>
 <br>
-
+<code><tt></tt></code>
+<table>
+    <tr>
+        <td>Image_FileName_CY3,</td>
+        <td>Image_PathName_CY3,</td>
+        <td>Data_Control,</td>
+        <td>Data_Dose</td>
+    </tr>
+    <tr>
+        <td>"Plate1_A01.tif",</td>
+        <td>"/images",</td>
+        <td>-1,</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>"Plate1_A02.tif",</td>
+        <td>"/images",</td>
+        <td>1,</td>
+        <td>1E10</td>
+    </tr>
+    <tr>
+        <td>"Plate1_A03.tif",</td>
+        <td>"/images",</td>
+        <td>0,</td>
+        <td>3E4</td>
+    </tr>
+    <tr>
+        <td>"Plate1_A04.tif",</td>
+        <td>"/images",</td>
+        <td>0,</td>
+        <td>5E5</td>
+    </tr>
+</table><br>
 See also the <b>Metadata</b> and legacy <b>LoadData</b> modules.
-'''
+"""
 
 import os
 
-import numpy as np
+import numpy
 import scipy.optimize
 
-import cellprofiler.module as cpm
-import cellprofiler.measurement as cpmeas
-import cellprofiler.preferences as cpprefs
-import cellprofiler.setting as cps
-from cellprofiler.gui.help import USING_METADATA_TAGS_REF, USING_METADATA_HELP_REF
-from cellprofiler.preferences import standardize_default_folder_names, \
-    DEFAULT_INPUT_FOLDER_NAME, DEFAULT_OUTPUT_FOLDER_NAME, \
-    IO_FOLDER_CHOICE_HELP_TEXT, IO_WITH_METADATA_HELP_TEXT
-from cellprofiler.setting import YES, NO
+import cellprofiler.gui.help
+import cellprofiler.measurement
+import cellprofiler.module
+import cellprofiler.preferences
+import cellprofiler.setting
 
 '''# of settings aside from the dose measurements'''
 FIXED_SETTING_COUNT = 1
@@ -133,115 +128,151 @@ VARIABLE_SETTING_COUNT = 5
 PC_CUSTOM = "Custom"
 
 
-class CalculateStatistics(cpm.Module):
+class CalculateStatistics(cellprofiler.module.Module):
     module_name = "CalculateStatistics"
     category = "Data Tools"
     variable_revision_number = 2
 
     def create_settings(self):
-        """Create your settings by subclassing this function
+        self.grouping_values = cellprofiler.setting.Measurement(
+            "Select the image measurement describing the positive and negative control status",
+            lambda: cellprofiler.measurement.IMAGE,
+            doc="""
+            The Z' factor, a measure of assay quality, is calculated by this module based on measurements from
+            images that are specified as positive controls and images that are specified as negative controls.
+            (Images that are neither are ignored.) The module assumes that all of the negative controls are
+            specified by a minimum value, all of the positive controls are specified by a maximum value, and
+            all other images have an intermediate value; this might allow you to use your dosing information to
+            also specify the positive and negative controls. If you don't use actual dose data to designate
+            your controls, a common practice is to designate -1 as a negative control, 0 as an experimental
+            sample, and 1 as a positive control. In other words, positive controls should all be specified by a
+            single high value (for instance, 1) and negative controls should all be specified by a single low
+            value (for instance, 0). Other samples should have an intermediate value to exclude them from the
+            Z' factor analysis.
+            <p>The typical way to provide this information in the pipeline is to create a text comma-delimited
+            (CSV) file outside of CellProfiler and then load that file into the pipeline using the
+            <b>Metadata</b> module or the legacy <b>LoadData</b> module. In that case, choose the measurement
+            that matches the column header of the measurement in the input file. See the <b>Metadata</b> module
+            help for an example text file.</p>
+            """
+        )
 
-        create_settings is called at the end of initialization.
-
-        You should create the setting variables for your module here:
-            # Ask the user for the input image
-            self.image_name = cellprofiler.settings.ImageNameSubscriber(...)
-            # Ask the user for the name of the output image
-            self.output_image = cellprofiler.settings.ImageNameProvider(...)
-            # Ask the user for a parameter
-            self.smoothing_size = cellprofiler.settings.Float(...)"""
-
-        self.grouping_values = cps.Measurement(
-                "Select the image measurement describing the positive and negative control status",
-                lambda: cpmeas.IMAGE, doc='''
-            The Z' factor, a measure of assay quality, is calculated by this
-            module based on measurements from images that are specified as positive controls
-            and images that are specified as negative controls. (Images that are neither are
-            ignored.) The module assumes that
-            all of the negative controls are specified by a minimum value, all of the
-            positive controls are specified by a maximum value, and all other images have an
-            intermediate value; this might allow you to use your dosing information to also
-            specify the positive and negative controls. If you don't use actual dose
-            data to designate your controls, a common practice is to designate -1 as a
-            negative control, 0 as an experimental sample, and 1 as a positive control.
-            In other words, positive controls should all be specified by a single high
-            value (for instance, 1) and negative controls should all be specified by a
-            single low value (for instance, 0). Other samples should have an intermediate value
-            to exclude them from the Z' factor analysis.<p>
-            The typical way to provide this information in the pipeline is to create
-            a text comma-delimited (CSV) file outside of CellProfiler and then load that file into the pipeline
-            using the <b>Metadata</b> module or the legacy <b>LoadData</b> module. In that case, choose the
-            measurement that matches the column header of the measurement
-            in the input file. See the <b>Metadata</b> module help for an example text file.''')
         self.dose_values = []
+
         self.add_dose_value(can_remove=False)
-        self.add_dose_button = cps.DoSomething("", "Add another dose specification",
-                                               self.add_dose_value)
+
+        self.add_dose_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another dose specification",
+            self.add_dose_value
+        )
 
     def add_dose_value(self, can_remove=True):
         '''Add a dose value measurement to the list
 
         can_delete - set this to False to keep from showing the "remove"
                      button for images that must be present.'''
-        group = cps.SettingsGroup()
-        group.append("measurement",
-                     cps.Measurement("Select the image measurement describing the treatment dose",
-                                     lambda: cpmeas.IMAGE,
-                                     doc="""
-            The V and Z' factor, a measure of assay quality, and the EC50, indicating
-            dose/response, are calculated by this module based on each image being
-            specified as a particular treatment dose. Choose a measurement that gives
-            the dose of some treatment for each of your images. <p>
-            The typical way to provide this information in the pipeline is to create
-            a comma-delimited text file (CSV) outside of CellProfiler and then load that file into the pipeline
-            using <b>Metadata</b> or the <b>LoadData</b>. In that case, choose the
-            measurement that matches the column header of the measurement
-            in the CSV input file. See <b>LoadData</b> help for an example text file.
-            """))
+        group = cellprofiler.setting.SettingsGroup()
 
-        group.append("log_transform", cps.Binary(
-                "Log-transform the dose values?", False, doc='''
-            Select <i>%(YES)s</i> if you have dose-response data and you want to log-transform
-            the dose values before fitting a sigmoid curve.
-            <p>Select <i>%(NO)s</i> if your data values indicate only positive vs. negative
-            controls.</p>''' % globals()))
+        group.append(
+            "measurement",
+            cellprofiler.setting.Measurement(
+                "Select the image measurement describing the treatment dose",
+                lambda: cellprofiler.measurement.IMAGE,
+                doc="""
+                The V and Z' factor, a measure of assay quality, and the EC50, indicating dose/response, are
+                calculated by this module based on each image being specified as a particular treatment dose.
+                Choose a measurement that gives the dose of some treatment for each of your images.
+                <p>The typical way to provide this information in the pipeline is to create a comma-delimited text
+                file (CSV) outside of CellProfiler and then load that file into the pipeline using <b>Metadata</b>
+                or the <b>LoadData</b>. In that case, choose the measurement that matches the column header of the
+                measurement in the CSV input file. See <b>LoadData</b> help for an example text file.</p>
+                """
+            )
+        )
 
-        group.append('wants_save_figure', cps.Binary(
-                '''Create dose/response plots?''', False, doc='''<a name='wants_save_figure'></a>
-            Select <i>%(YES)s</i> if you want to create and save
-            dose response plots. You will be asked for information on how to save the plots.''' % globals()))
+        group.append(
+            "log_transform",
+            cellprofiler.setting.Binary(
+                "Log-transform the dose values?",
+                False,
+                doc="""
+                Select <i>{YES}</i> if you have dose-response data and you want to log-transform the dose values
+                before fitting a sigmoid curve.
+                <p>Select <i>{NO}</i> if your data values indicate only positive vs. negative controls.</p>
+                """.format(**{
+                    "YES": cellprofiler.setting.YES,
+                    "NO": cellprofiler.setting.NO
+                })
+            )
+        )
 
-        group.append('figure_name', cps.Text(
-                "Figure prefix", "", doc='''
-            <i>(Used only when creating dose/response plots)</i><br>
-            CellProfiler will create a file name by appending the measurement name
-            to the prefix you enter here. For instance, if you have objects
-            named, "Cells", the "AreaShape_Area measurement", and a prefix of "Dose_",
-            CellProfiler will save the figure as <i>Dose_Cells_AreaShape_Area.m</i>.
-            Leave this setting blank if you do not want a prefix.'''
-        ))
-        group.append('pathname', cps.DirectoryPath(
+        group.append(
+            'wants_save_figure',
+            cellprofiler.setting.Binary(
+                '''Create dose/response plots?''',
+                False,
+                doc="""
+                <a id="wants_save_figure" name='wants_save_figure'></a> Select <i>{}</i> if you want to create
+                and save dose response plots. You will be asked for information on how to save the plots.
+                """.format(cellprofiler.setting.YES)
+            )
+        )
+
+        group.append(
+            'figure_name',
+            cellprofiler.setting.Text(
+                "Figure prefix",
+                "",
+                doc="""
+                <i>(Used only when creating dose/response plots)</i><br>
+                CellProfiler will create a file name by appending the measurement name to the prefix you enter
+                here. For instance, if you have objects named, "Cells", the "AreaShape_Area measurement", and a
+                prefix of "Dose_", CellProfiler will save the figure as <i>Dose_Cells_AreaShape_Area.m</i>. Leave
+                this setting blank if you do not want a prefix.
+                """
+            )
+        )
+
+        group.append(
+            'pathname',
+            cellprofiler.setting.DirectoryPath(
                 "Output file location",
                 dir_choices=[
-                    cps.DEFAULT_OUTPUT_FOLDER_NAME, cps.DEFAULT_INPUT_FOLDER_NAME,
-                    cps.ABSOLUTE_FOLDER_NAME, cps.DEFAULT_OUTPUT_SUBFOLDER_NAME,
-                    cps.DEFAULT_INPUT_SUBFOLDER_NAME], doc="""
-            <i>(Used only when creating dose/response plots)</i><br>
-            This setting lets you choose the folder for the output
-            files. %(IO_FOLDER_CHOICE_HELP_TEXT)s
+                    cellprofiler.setting.DEFAULT_OUTPUT_FOLDER_NAME,
+                    cellprofiler.setting.DEFAULT_INPUT_FOLDER_NAME,
+                    cellprofiler.setting.ABSOLUTE_FOLDER_NAME,
+                    cellprofiler.setting.DEFAULT_OUTPUT_SUBFOLDER_NAME,
+                    cellprofiler.setting.DEFAULT_INPUT_SUBFOLDER_NAME
+                ],
+                doc="""
+                <i>(Used only when creating dose/response plots)</i><br>
+                This setting lets you choose the folder for the output files. {IO_FOLDER_CHOICE_HELP_TEXT}
+                <p>{IO_WITH_METADATA_HELP_TEXT} {USING_METADATA_TAGS_REF} For instance, if you have a metadata tag
+                named "Plate", you can create a per-plate folder by selecting one of the subfolder options and then
+                specifying the subfolder name as "\g&lt;Plate&gt;". The module will substitute the metadata values
+                for the current image set for any metadata tags in the folder name. {USING_METADATA_HELP_REF}.</p>
+                """.format(**{
+                    "IO_FOLDER_CHOICE_HELP_TEXT": cellprofiler.preferences.IO_FOLDER_CHOICE_HELP_TEXT,
+                    "IO_WITH_METADATA_HELP_TEXT": cellprofiler.preferences.IO_WITH_METADATA_HELP_TEXT,
+                    "USING_METADATA_TAGS_REF": cellprofiler.gui.help.USING_METADATA_TAGS_REF,
+                    "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+                })
+            )
+        )
 
-            <p>%(IO_WITH_METADATA_HELP_TEXT)s %(USING_METADATA_TAGS_REF)s
-            For instance, if you have a metadata tag named
-            "Plate", you can create a per-plate folder by selecting one of the subfolder options
-            and then specifying the subfolder name as "\g&lt;Plate&gt;". The module will
-            substitute the metadata values for the current image set for any metadata tags in the
-            folder name. %(USING_METADATA_HELP_REF)s.</p>""" % globals()))
+        group.append("divider", cellprofiler.setting.Divider())
 
-        group.append("divider", cps.Divider())
+        group.append(
+            "remover",
+            cellprofiler.setting.RemoveSettingButton(
+                "",
+                "Remove this dose measurement",
+                self.dose_values,
+                group
+            )
+        )
 
-        group.append("remover", cps.RemoveSettingButton("", "Remove this dose measurement",
-                                                        self.dose_values,
-                                                        group))
         self.dose_values.append(group)
 
     def settings(self):
@@ -315,32 +346,32 @@ class CalculateStatistics(cpm.Module):
         workspace.post_run_display(self)
 
     def get_image_measurements(self, measurements, feature_name):
-        assert isinstance(measurements, cpmeas.Measurements)
+        assert isinstance(measurements, cellprofiler.measurement.Measurements)
         image_numbers = measurements.get_image_numbers()
-        result = np.zeros(len(image_numbers))
+        result = numpy.zeros(len(image_numbers))
         for i, image_number in enumerate(image_numbers):
             value = measurements.get_measurement(
-                    cpmeas.IMAGE, feature_name, image_number)
+                    cellprofiler.measurement.IMAGE, feature_name, image_number)
             result[i] = (None if value is None
-                         else value if np.isscalar(value) else value[0])
+                         else value if numpy.isscalar(value) else value[0])
         return result
 
     def aggregate_measurement(self, measurements, object_name, feature_name):
-        assert isinstance(measurements, cpmeas.Measurements)
+        assert isinstance(measurements, cellprofiler.measurement.Measurements)
         image_numbers = measurements.get_image_numbers()
-        result = np.zeros(len(image_numbers))
+        result = numpy.zeros(len(image_numbers))
         for i, image_number in enumerate(image_numbers):
             values = measurements.get_measurement(
                     object_name, feature_name, image_number)
             if values is None:
-                result[i] = np.nan
-            elif np.isscalar(values):
+                result[i] = numpy.nan
+            elif numpy.isscalar(values):
                 result[i] = values
-            elif np.any(np.isfinite(values)):
-                values = np.array(values)
-                result[i] = np.mean(values[np.isfinite(values)])
+            elif numpy.any(numpy.isfinite(values)):
+                values = numpy.array(values)
+                result[i] = numpy.mean(values[numpy.isfinite(values)])
             else:
-                result[i] = np.nan
+                result[i] = numpy.nan
         return result
 
     def post_run(self, workspace):
@@ -349,9 +380,9 @@ class CalculateStatistics(cpm.Module):
         workspace - the workspace at the end of the run
         """
         measurements = workspace.measurements
-        assert isinstance(measurements, cpmeas.Measurements)
+        assert isinstance(measurements, cellprofiler.measurement.Measurements)
         all_objects = [x for x in measurements.get_object_names()
-                       if x not in [cpmeas.EXPERIMENT, cpmeas.NEIGHBORS]]
+                       if x not in [cellprofiler.measurement.EXPERIMENT, cellprofiler.measurement.NEIGHBORS]]
         feature_set = []
         image_numbers = measurements.get_image_numbers()
         for object_name in all_objects:
@@ -364,7 +395,7 @@ class CalculateStatistics(cpm.Module):
         grouping_data = self.get_image_measurements(
                 measurements, self.grouping_values.value)
         grouping_data = grouping_data.flatten()
-        data = np.zeros((len(grouping_data), len(feature_set)))
+        data = numpy.zeros((len(grouping_data), len(feature_set)))
         for i, (object_name, feature_name) in enumerate(feature_set):
             data[:, i] = self.aggregate_measurement(
                     measurements, object_name, feature_name)
@@ -376,7 +407,7 @@ class CalculateStatistics(cpm.Module):
         #
         dose_data = self.get_image_measurements(
                 measurements, self.dose_values[0].measurement.value)
-        dose_data = np.array(dose_data).flatten()
+        dose_data = numpy.array(dose_data).flatten()
         v = v_factors(dose_data, data)
         expt_measurements = {
             "Zfactor": z,
@@ -416,7 +447,7 @@ class CalculateStatistics(cpm.Module):
         figure.set_subplots((2, 1))
         for ii, key in enumerate(("Zfactor", "Vfactor")):
             a = expt_measurements[key]
-            indexes = np.lexsort((-a,))
+            indexes = numpy.lexsort((-a,))
             col_labels = ["Object", "Feature", key]
             stats = [[feature_set[i][0], feature_set[i][1], a[i]]
                      for i in indexes[:10]]
@@ -431,11 +462,11 @@ class CalculateStatistics(cpm.Module):
             return False
         if feature_name.find("ExecutionTime") != -1:
             return False
-        if (object_name == cpmeas.IMAGE and
+        if (object_name == cellprofiler.measurement.IMAGE and
                     feature_name == self.grouping_values):
             # Don't measure the pos/neg controls
             return False
-        if (object_name == cpmeas.IMAGE and
+        if (object_name == cellprofiler.measurement.IMAGE and
                     feature_name in [g.measurement.value for g in self.dose_values]):
             return False
         if len(image_numbers) == 0:
@@ -448,17 +479,17 @@ class CalculateStatistics(cpm.Module):
                 break
         else:
             return False
-        if np.isscalar(v):
+        if numpy.isscalar(v):
             return not (isinstance(v, (str, unicode)))
         #
         # Make sure the measurement isn't a string or other oddity
         #
-        return np.asanyarray(v).dtype.kind not in "OSU"
+        return numpy.asanyarray(v).dtype.kind not in "OSU"
 
     def validate_module_warnings(self, pipeline):
         '''Warn user re: Test mode '''
         if pipeline.test_mode:
-            raise cps.ValidationError(
+            raise cellprofiler.setting.ValidationError(
                     "CalculateStatistics will not produce any output in test mode",
                     self.grouping_values)
 
@@ -472,15 +503,15 @@ class CalculateStatistics(cpm.Module):
             data_name = setting_values[0]
             logarithmic = setting_values[1]
             figure_name = setting_values[2]
-            wants_save_figure = (cps.NO if figure_name == cps.DO_NOT_USE
-                                 else cps.YES)
+            wants_save_figure = (cellprofiler.setting.NO if figure_name == cellprofiler.setting.DO_NOT_USE
+                                 else cellprofiler.setting.YES)
             setting_values = [data_name,
                               data_name,
                               logarithmic,
                               wants_save_figure,
                               figure_name,
                               PC_DEFAULT,
-                              cps.DO_NOT_USE]
+                              cellprofiler.setting.DO_NOT_USE]
             variable_revision_number = 1
             from_matlab = False
         if variable_revision_number == 1 and not from_matlab:
@@ -493,13 +524,13 @@ class CalculateStatistics(cpm.Module):
                 custom_path = setting_values[offset + 5]
                 if dir_choice == PC_CUSTOM:
                     if custom_path[0] == '.':
-                        dir_choice = cps.DEFAULT_OUTPUT_SUBFOLDER_NAME
+                        dir_choice = cellprofiler.setting.DEFAULT_OUTPUT_SUBFOLDER_NAME
                     elif custom_path[0] == '&':
-                        dir_choice = cps.DEFAULT_OUTPUT_SUBFOLDER_NAME
+                        dir_choice = cellprofiler.setting.DEFAULT_OUTPUT_SUBFOLDER_NAME
                         custom_path = "." + custom_path[1:]
                     else:
-                        dir_choice = cps.ABSOLUTE_FOLDER_NAME
-                directory = cps.DirectoryPath.static_join_string(
+                        dir_choice = cellprofiler.setting.ABSOLUTE_FOLDER_NAME
+                directory = cellprofiler.setting.DirectoryPath.static_join_string(
                         dir_choice, custom_path)
                 new_setting_values += setting_values[offset:(offset + 4)]
                 new_setting_values += [directory]
@@ -509,7 +540,7 @@ class CalculateStatistics(cpm.Module):
         # Standardize input/output directory name references
         setting_values = list(setting_values)
         for offset in range(5, len(setting_values), VARIABLE_SETTING_COUNT):
-            setting_values[offset] = cps.DirectoryPath.upgrade_setting(
+            setting_values[offset] = cellprofiler.setting.DirectoryPath.upgrade_setting(
                     setting_values[offset])
 
         return setting_values, variable_revision_number, from_matlab
@@ -537,7 +568,7 @@ def z_factors(xcol, ymatr):
     xs, avers, stds = loc_shrink_mean_std(xcol, ymatr)
     # Z' factor is defined by the positive and negative controls, so we take the
     # extremes BY DOSE of the averages and stdevs.
-    zrange = np.abs(avers[0, :] - avers[-1, :])
+    zrange = numpy.abs(avers[0, :] - avers[-1, :])
     zstd = stds[0, :] + stds[-1, :]
     zstd[zrange == 0] = 1
     zrange[zrange == 0] = 0.000001
@@ -545,7 +576,7 @@ def z_factors(xcol, ymatr):
 
     # The one-tailed Z' factor is defined by using only the samples between the
     # means, again defined by DOSE extremes
-    zrange = np.abs(avers[0, :] - avers[-1, :])
+    zrange = numpy.abs(avers[0, :] - avers[-1, :])
     exp1_vals = ymatr[xcol == xs[0], :]
     exp2_vals = ymatr[xcol == xs[-1], :]
     #
@@ -553,7 +584,7 @@ def z_factors(xcol, ymatr):
     # so that the lowest is in index 0 and the highest is in index 1 independent
     # of whether the control is negative or positive
     #
-    sort_avers = np.sort(np.array((avers[0, :], avers[-1, :])), 0)
+    sort_avers = numpy.sort(numpy.array((avers[0, :], avers[-1, :])), 0)
 
     for i in range(sort_avers.shape[1]):
         # Here the std must be calculated using the full formula
@@ -563,15 +594,15 @@ def z_factors(xcol, ymatr):
                            (exp1_cvals <= sort_avers[1, i])]
         vals2 = exp2_cvals[(exp2_cvals >= sort_avers[0, i]) &
                            (exp2_cvals <= sort_avers[1, i])]
-        stds[0, i] = np.sqrt(np.sum((vals1 - sort_avers[0, i]) ** 2) / len(vals1))
-        stds[1, i] = np.sqrt(np.sum((vals2 - sort_avers[1, i]) ** 2) / len(vals2))
+        stds[0, i] = numpy.sqrt(numpy.sum((vals1 - sort_avers[0, i]) ** 2) / len(vals1))
+        stds[1, i] = numpy.sqrt(numpy.sum((vals2 - sort_avers[1, i]) ** 2) / len(vals2))
 
     zstd = stds[0, :] + stds[1, :]
 
     # If means aren't the same and stdev aren't NaN, calculate the value
     z_one_tailed = 1 - 3 * (zstd / zrange)
     # Otherwise, set it to a really negative value
-    z_one_tailed[(~ np.isfinite(zstd)) | (zrange == 0)] = -1e5
+    z_one_tailed[(~ numpy.isfinite(zstd)) | (zrange == 0)] = -1e5
     return z, z_one_tailed, xs, avers
 
 
@@ -587,13 +618,13 @@ def v_factors(xcol, ymatr):
     #
     # Range of averages per label
     #
-    vrange = np.max(avers, 0) - np.min(avers, 0)
+    vrange = numpy.max(avers, 0) - numpy.min(avers, 0)
     #
     # Special handling for labels that have no ranges
     #
-    vstd = np.zeros(len(vrange))
+    vstd = numpy.zeros(len(vrange))
     vstd[vrange == 0] = 1
-    vstd[vrange != 0] = np.mean(stds[:, vrange != 0], 0)
+    vstd[vrange != 0] = numpy.mean(stds[:, vrange != 0], 0)
     vrange[vrange == 0] = 0.000001
     v = 1 - 6 * (vstd / vrange)
     return v
@@ -612,7 +643,7 @@ def loc_shrink_mean_std(xcol, ymatr):
     '''
     ncols = ymatr.shape[1]
     labels, labnum, xs = loc_vector_labels(xcol)
-    avers = np.zeros((labnum, ncols))
+    avers = numpy.zeros((labnum, ncols))
     stds = avers.copy()
     for ilab in range(labnum):
         labinds = (labels == ilab)
@@ -620,8 +651,8 @@ def loc_shrink_mean_std(xcol, ymatr):
         if labmatr.shape[0] == 1:
             avers[ilab, :] = labmatr[0, :]
         else:
-            avers[ilab, :] = np.mean(labmatr, 0)
-            stds[ilab, :] = np.std(labmatr, 0)
+            avers[ilab, :] = numpy.mean(labmatr, 0)
+            stds[ilab, :] = numpy.std(labmatr, 0)
     return xs, avers, stds
 
 
@@ -639,8 +670,8 @@ def loc_vector_labels(x):
     #
     # Get the index of each image's label in the sorted array
     #
-    order = np.lexsort((x,))
-    reverse_order = np.lexsort((order,))
+    order = numpy.lexsort((x,))
+    reverse_order = numpy.lexsort((order,))
     #
     # Get a sorted view of the labels
     #
@@ -654,9 +685,9 @@ def loc_vector_labels(x):
     #     0,0,0,1,1,1,2,2,2
     #
     # and sorted_x[first_occurrence] gives the unique labels in order
-    first_occurrence = np.ones(len(x), bool)
+    first_occurrence = numpy.ones(len(x), bool)
     first_occurrence[1:] = sorted_x[:-1] != sorted_x[1:]
-    sorted_labels = np.cumsum(first_occurrence) - 1
+    sorted_labels = numpy.cumsum(first_occurrence) - 1
     labels = sorted_labels[reverse_order]
     uniqsortvals = sorted_x[first_occurrence]
     return labels, len(uniqsortvals), uniqsortvals
@@ -690,10 +721,10 @@ def calculate_ec50(conc, responses, Logarithmic):
     # fitting a sigmoid to the curve if the concentrations are
     # log-transformed.
     if Logarithmic:
-        conc = np.log(conc)
+        conc = numpy.log(conc)
 
     n = responses.shape[1]
-    results = np.zeros((n, 4))
+    results = numpy.zeros((n, 4))
 
     def error_fn(v, x, y):
         '''Least-squares error function
@@ -701,7 +732,7 @@ def calculate_ec50(conc, responses, Logarithmic):
         This measures the least-squares error of fitting the sigmoid
         with parameters in v to the x and y data.
         '''
-        return np.sum((sigmoid(v, x) - y) ** 2)
+        return numpy.sum((sigmoid(v, x) - y) ** 2)
 
     for i in range(n):
         response = responses[:, i]
@@ -751,8 +782,8 @@ def calc_init_params(x, y):
     # unless the parameter will equal either the max(x) or min(x).  In this case, we will use the
     # former approach, namely (mean([max(x); min(x)]).  DL 2007.09.24
     YvalueAt50thPercentile = (min(y) + max(y)) / 2
-    DistanceToCentralYValue = np.abs(y - YvalueAt50thPercentile)
-    LocationOfNearest = np.argmin(DistanceToCentralYValue)
+    DistanceToCentralYValue = numpy.abs(y - YvalueAt50thPercentile)
+    LocationOfNearest = numpy.argmin(DistanceToCentralYValue)
     XvalueAt50thPercentile = x[LocationOfNearest]
     if XvalueAt50thPercentile == min(x) or XvalueAt50thPercentile == max(x):
         ec50 = (min(x) + max(x)) / 2
@@ -780,8 +811,8 @@ def calc_init_params(x, y):
     # I've made this look at the Y response at the minimum and maximum dosage
     # whereas before, it was looking at the Y response at the first and last
     # point which could just happen to be the same.
-    min_idx = np.argmin(x)
-    max_idx = np.argmax(x)
+    min_idx = numpy.argmin(x)
+    max_idx = numpy.argmax(x)
     x0 = x[min_idx]
     x1 = x[max_idx]
     y0 = y[min_idx]
@@ -816,7 +847,7 @@ def write_figures(prefix, directory, dose_name,
     from matplotlib.backends.backend_pdf import FigureCanvasPdf
 
     if log_transform:
-        dose_data = np.log(dose_data)
+        dose_data = numpy.log(dose_data)
     for i, (object_name, feature_name) in enumerate(feature_set):
         fdata = data[:, i]
         fcoeffs = ec50_coeffs[i, :]
@@ -825,7 +856,7 @@ def write_figures(prefix, directory, dose_name,
         f = Figure()
         canvas = FigureCanvasPdf(f)
         ax = f.add_subplot(1, 1, 1)
-        x = np.linspace(0, np.max(dose_data), num=100)
+        x = numpy.linspace(0, numpy.max(dose_data), num=100)
         y = sigmoid(fcoeffs, x)
         ax.plot(x, y)
         dose_y = sigmoid(fcoeffs, dose_data)

@@ -1,26 +1,22 @@
-'''test_calculatestatistics.py - test the CalculateStatistics module
-'''
-
+import StringIO
 import base64
 import os
 import tempfile
 import unittest
 import zlib
-from StringIO import StringIO
 
-import numpy as np
-from cellprofiler.preferences import set_headless
+import numpy
 
-set_headless()
+import cellprofiler.image
+import cellprofiler.measurement
+import cellprofiler.modules.calculatestatistics
+import cellprofiler.object
+import cellprofiler.pipeline
+import cellprofiler.preferences
+import cellprofiler.setting
+import cellprofiler.workspace
 
-import cellprofiler.setting as cps
-import cellprofiler.measurement as cpmeas
-import cellprofiler.image as cpi
-import cellprofiler.pipeline as cpp
-import cellprofiler.object as cpo
-import cellprofiler.workspace as cpw
-
-import cellprofiler.modules.calculatestatistics as C
+cellprofiler.preferences.set_headless()
 
 INPUT_OBJECTS = "my_object"
 TEST_FTR = "my_measurement"
@@ -40,16 +36,16 @@ class TestCalculateStatistics(unittest.TestCase):
                 '8ZmbPMvNQvtraPj27Jday4ONHJ0jXu45+P7zxu8Rz+fPsoqVvW8oxFuoKfJ/'
                 'WVN9wsfQGs9JBt4dBxwEHHcuUNT/ZfjfdfWi+vB5bsm76yu2pdqW++7VmqfO'
                 'L/dWXuueds62+ZPtP+zM7f7Pstg39TAAo3nSDA==')
-        pipeline = cpp.Pipeline()
+        pipeline = cellprofiler.pipeline.Pipeline()
 
         def callback(caller, event):
-            self.assertFalse(isinstance(event, cpp.LoadExceptionEvent))
+            self.assertFalse(isinstance(event, cellprofiler.pipeline.LoadExceptionEvent))
 
         pipeline.add_listener(callback)
-        pipeline.load(StringIO(zlib.decompress(base64.b64decode(data))))
+        pipeline.load(StringIO.StringIO(zlib.decompress(base64.b64decode(data))))
         self.assertEqual(len(pipeline.modules()), 2)
         module = pipeline.modules()[-1]
-        self.assertTrue(isinstance(module, C.CalculateStatistics))
+        self.assertTrue(isinstance(module, cellprofiler.modules.calculatestatistics.CalculateStatistics))
         self.assertEqual(module.grouping_values.value, "Dose")
         self.assertEqual(len(module.dose_values), 1)
         self.assertEqual(module.dose_values[0].measurement, "Dose")
@@ -57,7 +53,7 @@ class TestCalculateStatistics(unittest.TestCase):
         self.assertTrue(module.dose_values[0].wants_save_figure)
         self.assertEqual(module.dose_values[0].figure_name, "DOSE")
         self.assertEqual(module.dose_values[0].pathname.dir_choice,
-                         cps.DEFAULT_OUTPUT_FOLDER_NAME)
+                         cellprofiler.setting.DEFAULT_OUTPUT_FOLDER_NAME)
 
     def test_01_02_load_v1(self):
         data = ('eJztWNFu2jAUdWhA7SYmtJfx6KdpD12Wom5qUaUN6KohAasW1G5PlZuYNpKD'
@@ -75,13 +71,13 @@ class TestCalculateStatistics(unittest.TestCase):
                 'GfxHCv/RPH4bETsQm1zMxMbKZdy1mdGKfNbUN6t/OzN0k30oiN+z8uN9V/sd'
                 'z8Ptx6foFbSHes8zcHrYQYn7DfLN85tH4qPalonPW7+mLV9HrKNPcwIg/j8i'
                 'b/w/eRPZpA==')
-        pipeline = cpp.Pipeline()
+        pipeline = cellprofiler.pipeline.Pipeline()
 
         def callback(caller, event):
-            self.assertFalse(isinstance(event, cpp.LoadExceptionEvent))
+            self.assertFalse(isinstance(event, cellprofiler.pipeline.LoadExceptionEvent))
 
         pipeline.add_listener(callback)
-        pipeline.load(StringIO(zlib.decompress(base64.b64decode(data))))
+        pipeline.load(StringIO.StringIO(zlib.decompress(base64.b64decode(data))))
         #
         # The CalculateStatistics module has the following settings:
         #
@@ -100,7 +96,7 @@ class TestCalculateStatistics(unittest.TestCase):
         #
         self.assertEqual(len(pipeline.modules()), 2)
         module = pipeline.modules()[-1]
-        self.assertTrue(isinstance(module, C.CalculateStatistics))
+        self.assertTrue(isinstance(module, cellprofiler.modules.calculatestatistics.CalculateStatistics))
         self.assertEqual(module.grouping_values, "Metadata_SBS_doses")
         self.assertEqual(len(module.dose_values), 2)
         dose_value = module.dose_values[0]
@@ -113,7 +109,7 @@ class TestCalculateStatistics(unittest.TestCase):
         self.assertTrue(dose_value.log_transform)
         self.assertTrue(dose_value.wants_save_figure)
         self.assertEqual(dose_value.pathname.dir_choice,
-                         cps.DEFAULT_OUTPUT_SUBFOLDER_NAME)
+                         cellprofiler.setting.DEFAULT_OUTPUT_SUBFOLDER_NAME)
         self.assertEqual(dose_value.pathname.custom_path, './WELL')
 
     def test_01_03_load_v2(self):
@@ -129,16 +125,16 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
     Figure prefix:DoseResponsePlot
     File output location:Default Output Folder\x7CTest
 """
-        pipeline = cpp.Pipeline()
+        pipeline = cellprofiler.pipeline.Pipeline()
 
         def callback(caller, event):
-            self.assertFalse(isinstance(event, cpp.LoadExceptionEvent))
+            self.assertFalse(isinstance(event, cellprofiler.pipeline.LoadExceptionEvent))
 
         pipeline.add_listener(callback)
-        pipeline.load(StringIO(data))
+        pipeline.load(StringIO.StringIO(data))
         self.assertEqual(len(pipeline.modules()), 1)
         module = pipeline.modules()[0]
-        self.assertTrue(isinstance(module, C.CalculateStatistics))
+        self.assertTrue(isinstance(module, cellprofiler.modules.calculatestatistics.CalculateStatistics))
         self.assertEqual(module.grouping_values, "Metadata_Controls")
         self.assertEqual(len(module.dose_values), 1)
         dv = module.dose_values[0]
@@ -146,7 +142,7 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
         self.assertFalse(dv.log_transform)
         self.assertTrue(dv.wants_save_figure)
         self.assertEqual(dv.figure_name, "DoseResponsePlot")
-        self.assertEqual(dv.pathname.dir_choice, cps.DEFAULT_OUTPUT_FOLDER_NAME)
+        self.assertEqual(dv.pathname.dir_choice, cellprofiler.setting.DEFAULT_OUTPUT_FOLDER_NAME)
         self.assertEqual(dv.pathname.custom_path, "Test")
 
     # def test_02_01_compare_to_matlab(self):
@@ -489,14 +485,14 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
                 for the measurement M1 with values for 3 image sets
         controls_measurement - the name of the controls measurement
         '''
-        module = C.CalculateStatistics()
+        module = cellprofiler.modules.calculatestatistics.CalculateStatistics()
         module.module_num = 1
         module.grouping_values.value = controls_measurement
 
-        pipeline = cpp.Pipeline()
+        pipeline = cellprofiler.pipeline.Pipeline()
         pipeline.add_module(module)
 
-        m = cpmeas.Measurements()
+        m = cellprofiler.measurement.Measurements()
         nimages = None
         for object_name in mdict.keys():
             odict = mdict[object_name]
@@ -506,17 +502,17 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
                     nimages = len(odict[feature])
                 else:
                     self.assertEqual(nimages, len(odict[feature]))
-                if object_name == cpmeas.IMAGE and feature in dose_measurements:
+                if object_name == cellprofiler.measurement.IMAGE and feature in dose_measurements:
                     if len(module.dose_values) > 1:
                         module.add_dose_value()
                     dv = module.dose_values[-1]
                     dv.measurement.value = feature
         m.image_set_number = nimages
-        image_set_list = cpi.ImageSetList()
+        image_set_list = cellprofiler.image.ImageSetList()
         for i in range(nimages):
             image_set = image_set_list.get_image_set(i)
-        workspace = cpw.Workspace(pipeline, module, image_set,
-                                  cpo.ObjectSet(), m, image_set_list)
+        workspace = cellprofiler.workspace.Workspace(pipeline, module, image_set,
+                                                     cellprofiler.object.ObjectSet(), m, image_set_list)
         return workspace, module
 
     def test_02_02_NAN(self):
@@ -526,42 +522,42 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
         z-factors are NAN too.
         '''
         mdict = {
-            cpmeas.IMAGE: {
+            cellprofiler.measurement.IMAGE: {
                 "Metadata_Controls": [1, 0, -1],
                 "Metadata_Doses": [0, .5, 1]},
             INPUT_OBJECTS: {
-                TEST_FTR: [np.array([1.0, np.NaN, 2.3, 3.4, 2.9]),
-                           np.array([5.3, 2.4, np.NaN, 3.2]),
-                           np.array([np.NaN, 3.1, 4.3, 2.2, 1.1, 0.1])]
+                TEST_FTR: [numpy.array([1.0, numpy.NaN, 2.3, 3.4, 2.9]),
+                           numpy.array([5.3, 2.4, numpy.NaN, 3.2]),
+                           numpy.array([numpy.NaN, 3.1, 4.3, 2.2, 1.1, 0.1])]
             }}
         workspace, module = self.make_workspace(mdict,
                                                 "Metadata_Controls",
                                                 ["Metadata_Doses"])
         module.post_run(workspace)
         m = workspace.measurements
-        self.assertTrue(isinstance(m, cpmeas.Measurements))
+        self.assertTrue(isinstance(m, cellprofiler.measurement.Measurements))
         for category in ("Zfactor", "OneTailedZfactor", "Vfactor"):
             feature = '_'.join((category, INPUT_OBJECTS, TEST_FTR))
             value = m.get_experiment_measurement(feature)
-            self.assertFalse(np.isnan(value))
+            self.assertFalse(numpy.isnan(value))
 
     def test_02_03_make_path(self):
         # regression test of issue #1478
         # If the figure directory doesn't exist, it should be created
         #
         mdict = {
-            cpmeas.IMAGE: {
+            cellprofiler.measurement.IMAGE: {
                 "Metadata_Controls": [1, 0, -1],
                 "Metadata_Doses": [0, .5, 1]},
             INPUT_OBJECTS: {
-                TEST_FTR: [np.array([1.0, 2.3, 3.4, 2.9]),
-                           np.array([5.3, 2.4, 3.2]),
-                           np.array([3.1, 4.3, 2.2, 1.1, 0.1])]
+                TEST_FTR: [numpy.array([1.0, 2.3, 3.4, 2.9]),
+                           numpy.array([5.3, 2.4, 3.2]),
+                           numpy.array([3.1, 4.3, 2.2, 1.1, 0.1])]
             }}
         workspace, module = self.make_workspace(mdict,
                                                 "Metadata_Controls",
                                                 ["Metadata_Doses"])
-        assert isinstance(module, C.CalculateStatistics)
+        assert isinstance(module, cellprofiler.modules.calculatestatistics.CalculateStatistics)
         my_dir = tempfile.mkdtemp()
         my_subdir = os.path.join(my_dir, "foo")
         fnfilename = FIGURE_NAME + INPUT_OBJECTS + "_" + TEST_FTR + ".pdf"
@@ -569,7 +565,7 @@ CalculateStatistics:[module_num:1|svn_version:\'9495\'|variable_revision_number:
         try:
             dose_group = module.dose_values[0]
             dose_group.wants_save_figure.value = True
-            dose_group.pathname.dir_choice = cps.ABSOLUTE_FOLDER_NAME
+            dose_group.pathname.dir_choice = cellprofiler.setting.ABSOLUTE_FOLDER_NAME
             dose_group.pathname.custom_path = my_subdir
             dose_group.figure_name.value = FIGURE_NAME
             module.post_run(workspace)
