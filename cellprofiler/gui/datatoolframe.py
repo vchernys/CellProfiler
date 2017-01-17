@@ -197,8 +197,7 @@ class DataToolFrame(wx.Frame):
             self.measurements.image_set_number = index + 1
 
     def load_measurements(self, measurements_file_name):
-        self.measurements = cellprofiler.measurement.load_measurements(
-                measurements_file_name, can_overwrite=True)
+        self.measurements = cellprofiler.measurement.load_measurements(measurements_file_name)
         # Start on the first image
         self.measurements.next_image_set(1)
 

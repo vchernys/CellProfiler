@@ -10,7 +10,6 @@ import h5py
 logger = logging.getLogger(__name__)
 import numpy as np
 import re
-from scipy.io.matlab import loadmat
 from itertools import repeat
 import cellprofiler.preferences as cpprefs
 from cellprofiler.utilities.hdf5_dict import HDF5Dict, get_top_level_group
@@ -460,11 +459,6 @@ class Measurements(object):
     def has_image_set_start(self):
         '''True if the image set has an explicit start'''
         return self.image_set_start is not None
-
-    def load(self, measurements_file_name):
-        '''Load measurements from a matlab file'''
-        handles = loadmat(measurements_file_name, struct_as_record=True)
-        self.create_from_handles(handles)
 
     def create_from_handles(self, handles):
         '''Load measurements from a handles structure'''
@@ -1809,55 +1803,32 @@ def load_measurements_from_buffer(buf):
         os.unlink(filename)
 
 
-def load_measurements(filename, dest_file=None, can_overwrite=False,
-                      run_name=None,
-                      image_numbers=None):
-    '''Load measurements from an HDF5 file
+def load_measurements(filename, dest_file=None, run_name=None, image_numbers=None):
+    """Load measurements from an HDF5 file
 
-    filename - path to file containing the measurements or file-like object
-               if .mat
+    filename - path to file containing the measurements
 
     dest_file - path to file to be created. This file is used as the backing
                 store for the measurements.
-
-    can_overwrite - True to allow overwriting of existing measurements (not
-                    supported any longer)
 
     run_name - name of the run (an HDF file can contain measurements
                from multiple runs). By default, takes the last.
 
     returns a Measurements object
-    '''
-    HDF5_HEADER = (chr(137) + chr(72) + chr(68) + chr(70) + chr(13) + chr(10) +
-                   chr(26) + chr(10))
-    if hasattr(filename, "seek"):
-        filename.seek(0)
-        header = filename.read(len(HDF5_HEADER))
-        filename.seek(0)
-    else:
-        fd = open(filename, "rb")
-        header = fd.read(len(HDF5_HEADER))
-        fd.close()
-
-    if header == HDF5_HEADER:
-        f, top_level = get_top_level_group(filename)
-        try:
-            if VERSION in f.keys():
-                if run_name is not None:
-                    top_level = top_level[run_name]
-                else:
-                    # Assume that the user wants the last one
-                    last_key = sorted(top_level.keys())[-1]
-                    top_level = top_level[last_key]
-            m = Measurements(filename=dest_file, copy=top_level,
-                             image_numbers=image_numbers)
-            return m
-        finally:
-            f.close()
-    else:
-        m = Measurements(filename=dest_file)
-        m.load(filename)
+    """
+    f, top_level = get_top_level_group(filename)
+    try:
+        if VERSION in f.keys():
+            if run_name is not None:
+                top_level = top_level[run_name]
+            else:
+                # Assume that the user wants the last one
+                last_key = sorted(top_level.keys())[-1]
+                top_level = top_level[last_key]
+        m = Measurements(filename=dest_file, copy=top_level, image_numbers=image_numbers)
         return m
+    finally:
+        f.close()
 
 
 class MetadataGroup(dict):
