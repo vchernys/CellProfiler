@@ -6,16 +6,17 @@ Active contour model
 
 """
 
-import cellprofiler.module
-import cellprofiler.object
-import cellprofiler.setting
 import numpy
 import scipy.ndimage
 import skimage.draw
-import skimage.morphology
 import skimage.filters
 import skimage.measure
+import skimage.morphology
 import skimage.segmentation
+
+import cellprofiler.module
+import cellprofiler.object
+import cellprofiler.setting
 
 
 class ActiveContourModel(cellprofiler.module.ImageSegmentation):
