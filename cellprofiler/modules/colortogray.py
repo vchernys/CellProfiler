@@ -1,25 +1,22 @@
-'''
-<b> Color to Gray</b> converts an image with three color channels to a set of individual
-grayscale images.
+"""
+<b>Color to Gray</b> converts an image with three color channels to a set of individual grayscale images.
 <hr>
-
-This module converts RGB (Red, Green, Blue) color images to grayscale. All channels
-can be merged into one grayscale image (<i>Combine</i>), or each channel
-can be extracted into a separate grayscale image (<i>Split</i>). If you use <i>Combine</i>,
-the relative weights will adjust the contribution of the colors relative to each other.<br>
+This module converts RGB (Red, Green, Blue) color images to grayscale. All channels can be merged into one grayscale
+image (<i>Combine</i>), or each channel can be extracted into a separate grayscale image (<i>Split</i>). If you use
+<i>Combine</i>, the relative weights will adjust the contribution of the colors relative to each other.<br>
 <br>
 <i>Note:</i>All <b>Identify</b> modules require grayscale images.
-<p>See also <b>GrayToColor</b>.
-'''
+<p>See also <b>GrayToColor</b>.</p>
+"""
 
 import re
 
 import matplotlib.colors
-import numpy as np
+import numpy
 
-import cellprofiler.image  as cpi
-import cellprofiler.module as cpm
-import cellprofiler.setting as cps
+import cellprofiler.image
+import cellprofiler.module
+import cellprofiler.setting
 
 COMBINE = "Combine"
 SPLIT = "Split"
@@ -34,136 +31,199 @@ SLOTS_PER_CHANNEL = 3
 SLOT_CHANNEL_CHOICE = 0
 
 
-class ColorToGray(cpm.Module):
+class ColorToGray(cellprofiler.module.Module):
     module_name = "ColorToGray"
     variable_revision_number = 3
     category = "Image Processing"
 
     def create_settings(self):
-        self.image_name = cps.ImageNameSubscriber(
-                "Select the input image", cps.NONE)
+        self.image_name = cellprofiler.setting.ImageNameSubscriber(
+            "Select the input image",
+            cellprofiler.setting.NONE
+        )
 
-        self.combine_or_split = cps.Choice(
-                "Conversion method",
-                [COMBINE, SPLIT], doc='''
+        self.combine_or_split = cellprofiler.setting.Choice(
+            "Conversion method",
+            [COMBINE, SPLIT],
+            doc="""
             How do you want to convert the color image?
             <ul>
-            <li><i>%(SPLIT)s:</i> Splits the three channels
-            (red, green, blue) of a color image into three separate grayscale images. </li>
-            <li><i>%(COMBINE)s</i> Converts a color image to a grayscale
-            image by combining the three channels (red, green, blue) together.</li>
-            </ul>''' % globals())
+                <li><i>{SPLIT}:</i> Splits the three channels (red, green, blue) of a color image into three
+                separate grayscale images.</li>
+                <li><i>{COMBINE}</i> Converts a color image to a grayscale image by combining the three
+                channels (red, green, blue) together.</li>
+            </ul>
+            """.format(**{
+                "SPLIT": SPLIT,
+                "COMBINE": COMBINE
+            })
+        )
 
-        self.rgb_or_channels = cps.Choice(
-                "Image type", [CH_RGB, CH_HSV, CH_CHANNELS], doc="""
-            Many images contain color channels other than red, green
-            and blue. For instance, GIF and PNG formats can have an alpha
-            channel that encodes transparency. TIF formats can have an arbitrary
-            number of channels which represent pixel measurements made by
-            different detectors, filters or lighting conditions. This setting
-            provides three options to choose from:
+        self.rgb_or_channels = cellprofiler.setting.Choice(
+            "Image type",
+            [CH_RGB, CH_HSV, CH_CHANNELS],
+            doc="""
+            Many images contain color channels other than red, green and blue. For instance, GIF and PNG
+            formats can have an alpha channel that encodes transparency. TIF formats can have an arbitrary
+            number of channels which represent pixel measurements made by different detectors, filters or
+            lighting conditions. This setting provides three options to choose from:
             <ul>
-            <li><i>%(CH_RGB)s:</i> The RGB (red,green,blue) color space is the typical model in which color images are stored. Choosing this option
-            will split the image into any of the red, green and blue component images.</li>
-            <li><i>%(CH_HSV)s:</i>The HSV (hue, saturation, value) color space is based on more intuitive color characteristics as
-            tint, shade and tone. Choosing
-            this option will split the image into any of the hue, saturation, and value component images.</li>
-            <li><i>%(CH_CHANNELS)s:</i>This is a more complex model for images which involve more than three channels.</li>
-            </ul>""" % globals())
+                <li><i>{CH_RGB}:</i> The RGB (red,green,blue) color space is the typical model in which color
+                images are stored. Choosing this option will split the image into any of the red, green and
+                blue component images.</li>
+                <li><i>{CH_HSV}:</i>The HSV (hue, saturation, value) color space is based on more intuitive
+                color characteristics as tint, shade and tone. Choosing this option will split the image into
+                any of the hue, saturation, and value component images.</li>
+                <li><i>{CH_CHANNELS}:</i>This is a more complex model for images which involve more than three
+                channels.</li>
+            </ul>
+            """.format(**{
+                "CH_RGB": CH_RGB,
+                "CH_HSV": CH_HSV,
+                "CH_CHANNELS": CH_CHANNELS
+            })
+        )
 
         # The following settings are used for the combine option
-        self.grayscale_name = cps.ImageNameProvider(
-                "Name the output image", "OrigGray")
+        self.grayscale_name = cellprofiler.setting.ImageNameProvider(
+            "Name the output image",
+            "OrigGray"
+        )
 
-        self.red_contribution = cps.Float(
-                "Relative weight of the red channel",
-                1, 0, doc='''
+        self.red_contribution = cellprofiler.setting.Float(
+            "Relative weight of the red channel",
+            1,
+            0,
+            doc="""
             <i>(Used only when combining channels)</i><br>
-            Relative weights: If all relative weights are equal, all three
-            colors contribute equally in the final image. To weight colors relative
-            to each other, increase or decrease the relative weights.''')
+            Relative weights: If all relative weights are equal, all three colors contribute equally in the
+            final image. To weight colors relative to each other, increase or decrease the relative weights.
+            """
+        )
 
-        self.green_contribution = cps.Float(
-                "Relative weight of the green channel",
-                1, 0, doc='''
+        self.green_contribution = cellprofiler.setting.Float(
+            "Relative weight of the green channel",
+            1,
+            0,
+            doc="""
             <i>(Used only when combining channels)</i><br>
-            Relative weights: If all relative weights are equal, all three
-            colors contribute equally in the final image. To weight colors relative
-            to each other, increase or decrease the relative weights.''')
+            Relative weights: If all relative weights are equal, all three colors contribute equally in the
+            final image. To weight colors relative to each other, increase or decrease the relative weights.
+            """
+        )
 
-        self.blue_contribution = cps.Float(
-                "Relative weight of the blue channel",
-                1, 0, doc='''
+        self.blue_contribution = cellprofiler.setting.Float(
+            "Relative weight of the blue channel",
+            1,
+            0,
+            doc="""
             <i>(Used only when combining channels)</i><br>
-            Relative weights: If all relative weights are equal, all three
-            colors contribute equally in the final image. To weight colors relative
-            to each other, increase or decrease the relative weights.''')
+            Relative weights: If all relative weights are equal, all three colors contribute equally in the
+            final image. To weight colors relative to each other, increase or decrease the relative weights.
+            """
+        )
 
         # The following settings are used for the split RGB option
-        self.use_red = cps.Binary('Convert red to gray?', True)
-        self.red_name = cps.ImageNameProvider('Name the output image', "OrigRed")
+        self.use_red = cellprofiler.setting.Binary('Convert red to gray?', True)
 
-        self.use_green = cps.Binary('Convert green to gray?', True)
-        self.green_name = cps.ImageNameProvider('Name the output image', "OrigGreen")
+        self.red_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigRed")
 
-        self.use_blue = cps.Binary('Convert blue to gray?', True)
-        self.blue_name = cps.ImageNameProvider('Name the output image', "OrigBlue")
+        self.use_green = cellprofiler.setting.Binary('Convert green to gray?', True)
+
+        self.green_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigGreen")
+
+        self.use_blue = cellprofiler.setting.Binary('Convert blue to gray?', True)
+
+        self.blue_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigBlue")
 
         # The following settings are used for the split HSV ption
-        self.use_hue = cps.Binary('Convert hue to gray?', True)
-        self.hue_name = cps.ImageNameProvider('Name the output image', "OrigHue")
+        self.use_hue = cellprofiler.setting.Binary('Convert hue to gray?', True)
 
-        self.use_saturation = cps.Binary('Convert saturation to gray?', True)
-        self.saturation_name = cps.ImageNameProvider('Name the output image', "OrigSaturation")
+        self.hue_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigHue")
 
-        self.use_value = cps.Binary('Convert value to gray?', True)
-        self.value_name = cps.ImageNameProvider('Name the output image', "OrigValue")
+        self.use_saturation = cellprofiler.setting.Binary('Convert saturation to gray?', True)
+
+        self.saturation_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigSaturation")
+
+        self.use_value = cellprofiler.setting.Binary('Convert value to gray?', True)
+
+        self.value_name = cellprofiler.setting.ImageNameProvider('Name the output image', "OrigValue")
 
         # The alternative model:
         self.channels = []
-        self.add_channel(False)
-        self.channel_button = cps.DoSomething(
-                "", "Add another channel", self.add_channel)
 
-        self.channel_count = cps.HiddenCount(self.channels, "Channel count")
+        self.add_channel(False)
+
+        self.channel_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another channel",
+            self.add_channel
+        )
+
+        self.channel_count = cellprofiler.setting.HiddenCount(self.channels, "Channel count")
 
     channel_names = (["Red: 1", "Green: 2", "Blue: 3", "Alpha: 4"] +
                      [str(x) for x in range(5, 20)])
 
     def add_channel(self, can_remove=True):
         '''Add another channel to the channels list'''
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
+
         group.can_remove = can_remove
-        group.append("channel_choice", cps.Choice(
-                "Channel number", self.channel_names,
-                self.channel_names[len(self.channels) % len(self.channel_names)], doc="""
-            This setting chooses a channel to be processed.
-            <i>Red: 1</i> is the first channel in a .TIF or the red channel
-            in a traditional image file. <i>Green: 2</i> and <i>Blue: 3</i>
-            are the second and third channels of a TIF or the green and blue
-            channels in other formats. <i>Alpha: 4</i> is the transparency
-            channel for image formats that support transparency and is
-            channel # 4 for a .TIF file.
 
-            <b>ColorToGray</b> will fail to process an image if you select
-            a channel that is not supported by that image, for example, "5"
-            for a .PNG file"""))
+        group.append(
+            "channel_choice",
+            cellprofiler.setting.Choice(
+                "Channel number",
+                self.channel_names,
+                self.channel_names[len(self.channels) % len(self.channel_names)],
+                doc="""
+                This setting chooses a channel to be processed. <i>Red: 1</i> is the first channel in a .TIF or the
+                red channel in a traditional image file. <i>Green: 2</i> and <i>Blue: 3</i> are the second and
+                third channels of a TIF or the green and blue channels in other formats. <i>Alpha: 4</i> is the
+                transparency channel for image formats that support transparency and is channel # 4 for a .TIF
+                file.<br>
+                <b>ColorToGray</b> will fail to process an image if you select a channel that is not supported by
+                that image, for example, "5" for a .PNG file
+                """
+            )
+        )
 
-        group.append("contribution", cps.Float(
-                "Relative weight of the channel", 1, 0, doc='''
-            <i>(Used only when combining channels)</i><br>
-            Relative weights: If all relative weights are equal, all three
-            colors contribute equally in the final image. To weight colors relative
-            to each other, increase or decrease the relative weights.'''))
+        group.append(
+            "contribution",
+            cellprofiler.setting.Float(
+                "Relative weight of the channel",
+                1,
+                0,
+                doc="""
+                <i>(Used only when combining channels)</i><br>
+                Relative weights: If all relative weights are equal, all three colors contribute equally in the
+                final image. To weight colors relative to each other, increase or decrease the relative weights.
+                """
+            )
+        )
 
-        group.append("image_name", cps.ImageNameProvider(
-                "Image name", value="Channel%d" % (len(self.channels) + 1), doc="""
-            This is the name of the grayscale image that holds
-            the image data from the chosen channel."""))
+        group.append(
+            "image_name",
+            cellprofiler.setting.ImageNameProvider(
+                "Image name",
+                value="Channel%d" % (len(self.channels) + 1),
+                doc="""
+                This is the name of the grayscale image that holds the image data from the chosen channel.
+                """
+            )
+        )
 
         if group.can_remove:
-            group.append("remover", cps.RemoveSettingButton(
-                    "", "Remove this channel", self.channels, group))
+            group.append(
+                "remover",
+                cellprofiler.setting.RemoveSettingButton(
+                    "",
+                    "Remove this channel",
+                    self.channels, group
+                )
+            )
+
         self.channels.append(group)
 
     def visible_settings(self):
@@ -238,12 +298,12 @@ class ColorToGray(cpm.Module):
         if self.should_split():
             if (self.rgb_or_channels == CH_RGB) and not any(
                     [self.use_red.value, self.use_blue.value, self.use_green.value]):
-                raise cps.ValidationError("You must output at least one of the color images when in split mode",
-                                          self.use_red)
+                raise cellprofiler.setting.ValidationError("You must output at least one of the color images when in split mode",
+                                                           self.use_red)
             if (self.rgb_or_channels == CH_HSV) and not any(
                     [self.use_hue.value, self.use_saturation.value, self.use_value.value]):
-                raise cps.ValidationError("You must output at least one of the color images when in split mode",
-                                          self.use_hue)
+                raise cellprofiler.setting.ValidationError("You must output at least one of the color images when in split mode",
+                                                           self.use_hue)
 
     def channels_and_contributions(self):
         """Return tuples of channel indexes and their relative contributions
@@ -321,12 +381,12 @@ class ColorToGray(cpm.Module):
         input_image = image.pixel_data
         channels, contributions = zip(*self.channels_and_contributions())
         denominator = sum(contributions)
-        channels = np.array(channels, int)
-        contributions = np.array(contributions) / denominator
+        channels = numpy.array(channels, int)
+        contributions = numpy.array(contributions) / denominator
 
-        output_image = np.sum(input_image[:, :, channels] *
-                              contributions[np.newaxis, np.newaxis, :], 2)
-        image = cpi.Image(output_image, parent_image=image)
+        output_image = numpy.sum(input_image[:, :, channels] *
+                                 contributions[numpy.newaxis, numpy.newaxis, :], 2)
+        image = cellprofiler.image.Image(output_image, parent_image=image)
         workspace.image_set.add(self.grayscale_name.value, image)
 
         workspace.display_data.input_image = input_image
@@ -353,12 +413,12 @@ class ColorToGray(cpm.Module):
         if self.rgb_or_channels in (CH_RGB, CH_CHANNELS):
             for index, name, title in self.channels_and_image_names():
                 output_image = input_image[:, :, index]
-                workspace.image_set.add(name, cpi.Image(output_image, parent_image=image))
+                workspace.image_set.add(name, cellprofiler.image.Image(output_image, parent_image=image))
                 disp_collection.append([output_image, title])
         elif self.rgb_or_channels == CH_HSV:
             output_image = matplotlib.colors.rgb_to_hsv(input_image)
             for index, name, title in self.channels_and_image_names():
-                workspace.image_set.add(name, cpi.Image(output_image[:, :, index], parent_image=image))
+                workspace.image_set.add(name, cellprofiler.image.Image(output_image[:, :, index], parent_image=image))
                 disp_collection.append([output_image[:, :, index], title])
 
         workspace.display_data.input_image = input_image
@@ -420,7 +480,7 @@ class ColorToGray(cpm.Module):
                                   ]
             for i in range(3):
                 vv = setting_values[i + 8]
-                use_it = ((vv == cps.DO_NOT_USE or vv == "N") and cps.NO) or cps.YES
+                use_it = ((vv == cellprofiler.setting.DO_NOT_USE or vv == "N") and cellprofiler.setting.NO) or cellprofiler.setting.YES
                 new_setting_values.append(use_it)
                 new_setting_values.append(vv)
             setting_values = new_setting_values
@@ -443,7 +503,7 @@ class ColorToGray(cpm.Module):
             # Added HSV settings
             #
             setting_values = (setting_values[:13] +
-                              [cps.YES, "OrigHue", cps.YES, "OrigSaturation", cps.YES, "OrigValue"] +
+                              [cellprofiler.setting.YES, "OrigHue", cellprofiler.setting.YES, "OrigSaturation", cellprofiler.setting.YES, "OrigValue"] +
                               setting_values[13:])
             variable_revision_number = 3
 
