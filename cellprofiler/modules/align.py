@@ -1,36 +1,30 @@
-'''<b>Align</b> aligns images relative to each other, for example, to correct 
-shifts in the optical path of a microscope in each channel of a multi-channel
-set of images.
+"""
+<b>Align</b> aligns images relative to each other, for example, to correct shifts in the optical path of a microscope
+in each channel of a multi-channel set of images.
 <hr>
-For two or more input images, this module determines the optimal alignment
-among them. Aligning images is useful to obtain proper measurements of the
-intensities in one channel based on objects identified in another channel,
-for example. Alignment is often needed when the microscope is not perfectly
-calibrated. It can also be useful to align images in a time-lapse series of
-images.  The module stores the amount of shift between images as a
-measurement, which can be useful for quality control purposes.
-
-<p>Note that the second image (and others following) is always aligned
-with respect to the first image. That is, the X/Y offsets indicate how much
-the second image needs to be shifted by to match the first.</p>
-
+For two or more input images, this module determines the optimal alignment among them. Aligning images is useful to
+obtain proper measurements of the intensities in one channel based on objects identified in another channel, for
+example. Alignment is often needed when the microscope is not perfectly calibrated. It can also be useful to align
+images in a time-lapse series of images. The module stores the amount of shift between images as a measurement, which
+can be useful for quality control purposes.
+<p>Note that the second image (and others following) is always aligned with respect to the first image. That is, the
+X/Y offsets indicate how much the second image needs to be shifted by to match the first.</p>
 <h4>Available measurements</h4>
 <ul>
-<li><i>XShift, Yshift:</i> The pixel shift in X and Y of the
-aligned image with respect to the original image.</li>
+    <li><i>XShift, Yshift:</i> The pixel shift in X and Y of the aligned image with respect to the original image.</li>
 </ul>
-'''
+"""
 
-import numpy as np
-import scipy.ndimage as scind
+import centrosome.filter
+import numpy
+import scipy.fftpack
+import scipy.ndimage
 import scipy.sparse
-from centrosome.filter import stretch
-from scipy.fftpack import fft2, ifft2
 
-import cellprofiler.image as cpi
-import cellprofiler.module as cpm
-import cellprofiler.measurement as cpmeas
-import cellprofiler.setting as cps
+import cellprofiler.image
+import cellprofiler.measurement
+import cellprofiler.module
+import cellprofiler.setting
 
 M_MUTUAL_INFORMATION = 'Mutual Information'
 M_CROSS_CORRELATION = 'Normalized Cross Correlation'
@@ -48,139 +42,162 @@ C_ALIGN = "Align"
 MEASUREMENT_FORMAT = C_ALIGN + "_%sshift_%s"
 
 
-class Align(cpm.Module):
+class Align(cellprofiler.module.Module):
     module_name = "Align"
     category = 'Image Processing'
     variable_revision_number = 3
 
     def create_settings(self):
-        self.first_input_image = cps.ImageNameSubscriber(
-                "Select the first input image",
-                cps.NONE, doc="""
-            Specify the name of the first image to align.""")
+        self.first_input_image = cellprofiler.setting.ImageNameSubscriber(
+            "Select the first input image",
+            cellprofiler.setting.NONE,
+            doc="Specify the name of the first image to align."
+        )
 
-        self.first_output_image = cps.ImageNameProvider(
-                "Name the first output image",
-                "AlignedRed", doc="""
-            Enter the name of the first aligned image.""")
+        self.first_output_image = cellprofiler.setting.ImageNameProvider(
+            "Name the first output image",
+            "AlignedRed",
+            doc="Enter the name of the first aligned image."
+        )
 
-        self.separator_1 = cps.Divider(line=False)
-        self.second_input_image = cps.ImageNameSubscriber(
-                "Select the second input image",
-                cps.NONE, doc="""
-            Specify the name of the second image to align.""")
+        self.separator_1 = cellprofiler.setting.Divider(line=False)
 
-        self.second_output_image = cps.ImageNameProvider(
-                "Name the second output image",
-                "AlignedGreen", doc="""
-            Enter the name of the second aligned image.""")
+        self.second_input_image = cellprofiler.setting.ImageNameSubscriber(
+            "Select the second input image",
+            cellprofiler.setting.NONE,
+            doc="Specify the name of the second image to align."
+        )
 
-        self.separator_2 = cps.Divider(line=False)
+        self.second_output_image = cellprofiler.setting.ImageNameProvider(
+            "Name the second output image",
+            "AlignedGreen",
+            doc="Enter the name of the second aligned image."
+        )
+
+        self.separator_2 = cellprofiler.setting.Divider(line=False)
+
         self.additional_images = []
-        self.add_button = cps.DoSomething("", "Add another image",
-                                          self.add_image)
 
-        self.alignment_method = cps.Choice("Select the alignment method",
-                                           M_ALL, doc='''
-             Two options for the alignment method are available:<br>
-             <ul>
-             <li><i>%(M_MUTUAL_INFORMATION)s:</i> This more general method works well for aligning
-             images from different modalities that contain the same information, but are
-             expressed differently. However, this method performs better than %(M_CROSS_CORRELATION)s,
-             even in the same modality, if the images are not highly correlated.
-             It is iterative, and thus tends to be slower than other methods,
-             but is more likely to be correct.  Essentially, alignment is performed by measuring
-             how well one image "explains" the other. For example, a flourescent image
-             can be aligned to a brightfield image by this method since the relevant
-             features are bright in one modality where they are dim in the other. </li>
-             <li><i>%(M_CROSS_CORRELATION)s:</i> This is a good means
-             of alignment in the case of images acquired with the same modality
-             (e.g., all images to be aligned are fluorescent). It is fast, however
-             it can be highly influenced by a particular, possibly spurious, feature and
-             in turn generate anomalously large shifts. It allows for a
-             linear relationship between the intensities of the two images,
-             i.e., the relevant features in the images to be aligned all have
-             varying degrees of brightness.</li>
-             </ul>
-             <p>
-             <b>References</b>
-             <ul>
-             <li>Lewis JP. (1995) "Fast normalized cross-correlation." <i>Vision Interface</i>, 1-7.</li>
-             </ul>
-             </p>''' % globals())
+        self.add_button = cellprofiler.setting.DoSomething("", "Add another image", self.add_image)
 
-        self.crop_mode = cps.Choice(
-                "Crop mode", [C_CROP, C_PAD, C_SAME_SIZE], doc="""
-            The crop mode determines how the output images are either cropped
-            or padded after alignment. The alignment phase calculates the
-            areas in each image that are found to be overlapping. In almost
-            all cases, there will be portions of some or all of the images
-            that don't overlap with any other aligned image. These portions
-            have no counterpart and will be excluded from analysis. There
-            are three choices for cropping:
+        self.alignment_method = cellprofiler.setting.Choice(
+            "Select the alignment method",
+            M_ALL,
+            doc="""
+            Two options for the alignment method are available:<br>
             <ul>
-            <li><i>%(C_CROP)s:</i> Crop every image to the region that overlaps
-            in all images. This makes downstream
-            analysis simpler because all of the output images
-            have authentic pixel data at all positions, however it discards
-            parts of images. Also, the output images may not be the same size
-            as the input images which may cause problems if downstream modules
-            use aligned and unaligned images (which may be of differing sizes)
-            in combination.</li>
-            <li><i>%(C_PAD)s:</i> Align every image and pad with masked black
-            pixels to make each image the same size. This results in larger
-            images, but preserves all information in each of the images. This
-            may be the best choice if images undergo an operation such as
-            smoothing that could use the information that would otherwise be
-            cropped.</li>
-            <li><i>%(C_SAME_SIZE)s:</i> Maintain the sizes of the images but
-            align them, masking the unaligned portions with black pixels.
-            <b>Align</b> aligns all images relative to the first.
-            This is a reasonable option for alignments
-            with small displacements since it maintains a consistent image
-            size which may be useful if output images from different image sets
-            will be compared against each other after processing. The
-            reference image can also be used across image sets. For example,
-            the reference image could be loaded for all image sets in a
-            group to align the entire group's images similarly, then the
-            aligned images could be combined in a module such as
-            <b>MakeProjection</b>.</li>
-            </ul>""" % globals())
+                <li><i>{M_MUTUAL_INFORMATION}:</i> This more general method works well for aligning images from
+                different modalities that contain the same information, but are expressed differently. However,
+                this method performs better than {M_CROSS_CORRELATION}, even in the same modality, if the
+                images are not highly correlated. It is iterative, and thus tends to be slower than other
+                methods, but is more likely to be correct. Essentially, alignment is performed by measuring how
+                well one image "explains" the other. For example, a flourescent image can be aligned to a
+                brightfield image by this method since the relevant features are bright in one modality where
+                they are dim in the other.</li>
+                <li><i>{M_CROSS_CORRELATION}:</i> This is a good means of alignment in the case of images
+                acquired with the same modality (e.g., all images to be aligned are fluorescent). It is fast,
+                however it can be highly influenced by a particular, possibly spurious, feature and in turn
+                generate anomalously large shifts. It allows for a linear relationship between the intensities
+                of the two images, i.e., the relevant features in the images to be aligned all have varying
+                degrees of brightness.</li>
+            </ul>
+            <p><b>References</b></p>
+            <ul>
+                <li>Lewis JP. (1995) "Fast normalized cross-correlation." <i>Vision Interface</i>, 1-7.</li>
+            </ul>
+            """.format(**{
+                "M_MUTUAL_INFORMATION": M_MUTUAL_INFORMATION,
+                "M_CROSS_CORRELATION": M_CROSS_CORRELATION
+            })
+        )
+
+        self.crop_mode = cellprofiler.setting.Choice(
+            "Crop mode",
+            [C_CROP, C_PAD, C_SAME_SIZE],
+            doc="""
+            The crop mode determines how the output images are either cropped or padded after alignment. The
+            alignment phase calculates the areas in each image that are found to be overlapping. In almost all
+            cases, there will be portions of some or all of the images that don't overlap with any other
+            aligned image. These portions have no counterpart and will be excluded from analysis. There are
+            three choices for cropping:
+            <ul>
+                <li><i>{C_CROP}:</i> Crop every image to the region that overlaps in all images. This makes
+                downstream analysis simpler because all of the output images have authentic pixel data at all
+                positions, however it discards parts of images. Also, the output images may not be the same
+                size as the input images which may cause problems if downstream modules use aligned and
+                unaligned images (which may be of differing sizes) in combination.</li>
+                <li><i>{C_PAD}:</i> Align every image and pad with masked black pixels to make each image the
+                same size. This results in larger images, but preserves all information in each of the images.
+                This may be the best choice if images undergo an operation such as smoothing that could use the
+                information that would otherwise be cropped.</li>
+                <li><i>{C_SAME_SIZE}:</i> Maintain the sizes of the images but align them, masking the
+                unaligned portions with black pixels. <b>Align</b> aligns all images relative to the first.
+                This is a reasonable option for alignments with small displacements since it maintains a
+                consistent image size which may be useful if output images from different image sets will be
+                compared against each other after processing. The reference image can also be used across image
+                sets. For example, the reference image could be loaded for all image sets in a group to align
+                the entire group's images similarly, then the aligned images could be combined in a module such
+                as <b>MakeProjection</b>.</li>
+            </ul>
+            """.format(**{
+                "C_CROP": C_CROP,
+                "C_PAD": C_PAD,
+                "C_SAME_SIZE": C_SAME_SIZE
+            })
+        )
 
     def add_image(self, can_remove=True):
         '''Add an image + associated questions and buttons'''
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
         if can_remove:
-            group.append("divider", cps.Divider(line=False))
+            group.append("divider", cellprofiler.setting.Divider(line=False))
 
-        group.append("input_image_name",
-                     cps.ImageNameSubscriber(
-                             "Select the additional image",
-                             cps.NONE, doc="""
-                         Select the additional image to align?"""))
+        group.append(
+            "input_image_name",
+            cellprofiler.setting.ImageNameSubscriber(
+                "Select the additional image",
+                cellprofiler.setting.NONE,
+                doc="Select the additional image to align?"
+            )
+        )
 
-        group.append("output_image_name",
-                     cps.ImageNameProvider(
-                             "Name the output image",
-                             "AlignedBlue", doc="""
-                         Enter the name of the aligned image?"""))
+        group.append(
+            "output_image_name",
+            cellprofiler.setting.ImageNameProvider(
+                "Name the output image",
+                "AlignedBlue",
+                doc="Enter the name of the aligned image?"
+            )
+        )
 
-        group.append("align_choice",
-                     cps.Choice(
-                             "Select how the alignment is to be applied",
-                             [A_SIMILARLY, A_SEPARATELY], doc="""
-                         An additional image can either be aligned similarly to the second one or
-                         a separate alignment to the first image can be calculated:
-                         <ul>
-                         <li><i>%(A_SIMILARLY)s:</i> The same alignment measurements obtained from
-                         the first two input images are applied to this additional image.</li>
-                         <li><i>%(A_SEPARATELY)s:</i> A new set of alignment measurements are
-                         calculated for this additional image using the alignment method
-                         specified with respect to the first input image.</li>
-                         </ul>""" % globals()))
+        group.append(
+            "align_choice",
+            cellprofiler.setting.Choice(
+                "Select how the alignment is to be applied",
+                [A_SIMILARLY, A_SEPARATELY],
+                doc="""
+                An additional image can either be aligned similarly to the second one or a separate alignment to
+                the first image can be calculated:
+                <ul>
+                    <li><i>{A_SIMILARLY}:</i> The same alignment measurements obtained from the first two input
+                    images are applied to this additional image.</li>
+                    <li><i>{A_SEPARATELY}:</i> A new set of alignment measurements are calculated for this
+                    additional image using the alignment method specified with respect to the first input
+                    image.</li>
+                </ul>
+                """.format(**{
+                    "A_SIMILARLY": A_SIMILARLY,
+                    "A_SEPARATELY": A_SEPARATELY
+                })
+            )
+        )
 
         if can_remove:
-            group.append("remover", cps.RemoveSettingButton("", "Remove above image", self.additional_images, group))
+            group.append(
+                "remover",
+                cellprofiler.setting.RemoveSettingButton("", "Remove above image", self.additional_images, group)
+            )
+
         self.additional_images.append(group)
 
     def settings(self):
@@ -210,8 +227,8 @@ class Align(cpm.Module):
         return result
 
     def run(self, workspace):
-        i_min = np.iinfo(int).max
-        j_min = np.iinfo(int).max
+        i_min = numpy.iinfo(int).max
+        j_min = numpy.iinfo(int).max
         off_x, off_y = self.align(workspace, self.first_input_image.value,
                                   self.second_input_image.value)
         names = [
@@ -281,10 +298,10 @@ class Align(cpm.Module):
             # Make them grayscale if needed
             #
             first_pixels, other_pixels = [
-                img if img.ndim == 2 else np.mean(img, 2)
+                img if img.ndim == 2 else numpy.mean(img, 2)
                 for img in first_input_pixels, input_pixels]
-            max_shape = np.maximum(first_pixels.shape, other_pixels.shape)
-            img = np.zeros((max_shape[0], max_shape[1], 3))
+            max_shape = numpy.maximum(first_pixels.shape, other_pixels.shape)
+            img = numpy.zeros((max_shape[0], max_shape[1], 3))
             img[:first_pixels.shape[0], :first_pixels.shape[1], 0] = first_pixels
             img[:other_pixels.shape[0], :other_pixels.shape[1], 1] = other_pixels
             figure.subplot_imshow(0, j, img, unaligned_title,
@@ -294,10 +311,10 @@ class Align(cpm.Module):
                              (first_output_name, output_name,
                               -off_x, -off_y))
             first_pixels, other_pixels = [
-                img if img.ndim == 2 else np.mean(img, 2)
+                img if img.ndim == 2 else numpy.mean(img, 2)
                 for img in first_output_pixels, output_pixels]
-            max_shape = np.maximum(first_pixels.shape, other_pixels.shape)
-            img = np.zeros((max_shape[0], max_shape[1], 3))
+            max_shape = numpy.maximum(first_pixels.shape, other_pixels.shape)
+            img = numpy.zeros((max_shape[0], max_shape[1], 3))
             img[:first_pixels.shape[0], :first_pixels.shape[1], 0] = first_pixels
             img[:other_pixels.shape[0], :other_pixels.shape[1], 1] = other_pixels
             figure.subplot_imshow(1, j, img, aligned_title,
@@ -338,9 +355,9 @@ class Align(cpm.Module):
         # TODO: Possibly use all 3 dimensions for color some day
         #
         if pixels1.ndim == 3:
-            pixels1 = np.mean(pixels1, 2)
+            pixels1 = numpy.mean(pixels1, 2)
         if pixels2.ndim == 3:
-            pixels2 = np.mean(pixels2, 2)
+            pixels2 = numpy.mean(pixels2, 2)
         #
         # We double the size of the image to get a field of zeros
         # for the parts of one image that don't overlap the displaced
@@ -351,22 +368,22 @@ class Align(cpm.Module):
         # the period of the largest image - the smaller just will have zero
         # amplitude at that frequency.
         #
-        s = np.maximum(pixels1.shape, pixels2.shape)
+        s = numpy.maximum(pixels1.shape, pixels2.shape)
         fshape = s * 2
         #
         # Calculate the # of pixels at a particular point
         #
-        i, j = np.mgrid[-s[0]:s[0],
+        i, j = numpy.mgrid[-s[0]:s[0],
                -s[1]:s[1]]
-        unit = np.abs(i * j).astype(float)
+        unit = numpy.abs(i * j).astype(float)
         unit[unit < 1] = 1  # keeps from dividing by zero in some places
         #
         # Normalize the pixel values around zero which does not affect the
         # correlation, keeps some of the sums of multiplications from
         # losing precision and precomputes t(x-u,y-v) - t_mean
         #
-        pixels1 = pixels1 - np.mean(pixels1)
-        pixels2 = pixels2 - np.mean(pixels2)
+        pixels1 = pixels1 - numpy.mean(pixels1)
+        pixels2 = pixels2 - numpy.mean(pixels2)
         #
         # Lewis uses an image, f and a template t. He derives a normalized
         # cross correlation, ncc(u,v) =
@@ -377,9 +394,9 @@ class Align(cpm.Module):
         # leaving f(x,y)*(t(x-u,y-v)-t_mean) which is a convolution of f
         # by t-t_mean.
         #
-        fp1 = fft2(pixels1, fshape)
-        fp2 = fft2(pixels2, fshape)
-        corr12 = ifft2(fp1 * fp2.conj()).real
+        fp1 = scipy.fftpack.fft2(pixels1, fshape)
+        fp2 = scipy.fftpack.fft2(pixels2, fshape)
+        corr12 = scipy.fftpack.ifft2(fp1 * fp2.conj()).real
 
         #
         # Use the trick of Lewis here - compute the cumulative sums
@@ -399,7 +416,7 @@ class Align(cpm.Module):
         #
         p1_si = pixels1.shape[0]
         p1_sj = pixels1.shape[1]
-        p1_sum = np.zeros(fshape)
+        p1_sum = numpy.zeros(fshape)
         p1_sum[:p1_si, :p1_sj] = cumsum_quadrant(pixels1, False, False)
         p1_sum[:p1_si, -p1_sj:] = cumsum_quadrant(pixels1, False, True)
         p1_sum[-p1_si:, :p1_sj] = cumsum_quadrant(pixels1, True, False)
@@ -411,12 +428,12 @@ class Align(cpm.Module):
 
         p2_si = pixels2.shape[0]
         p2_sj = pixels2.shape[1]
-        p2_sum = np.zeros(fshape)
+        p2_sum = numpy.zeros(fshape)
         p2_sum[:p2_si, :p2_sj] = cumsum_quadrant(pixels2, False, False)
         p2_sum[:p2_si, -p2_sj:] = cumsum_quadrant(pixels2, False, True)
         p2_sum[-p2_si:, :p2_sj] = cumsum_quadrant(pixels2, True, False)
         p2_sum[-p2_si:, -p2_sj:] = cumsum_quadrant(pixels2, True, True)
-        p2_sum = np.fliplr(np.flipud(p2_sum))
+        p2_sum = numpy.fliplr(numpy.flipud(p2_sum))
         p2_mean = p2_sum / unit
         #
         # Once we have the means for u,v, we can caluclate the
@@ -424,22 +441,22 @@ class Align(cpm.Module):
         # the mean^2 by the # of elements being summed-over
         # to account for the mean being summed that many times.
         #
-        p1sd = np.sum(pixels1 ** 2) - p1_mean ** 2 * np.product(s)
-        p2sd = np.sum(pixels2 ** 2) - p2_mean ** 2 * np.product(s)
+        p1sd = numpy.sum(pixels1 ** 2) - p1_mean ** 2 * numpy.product(s)
+        p2sd = numpy.sum(pixels2 ** 2) - p2_mean ** 2 * numpy.product(s)
         #
         # There's always chance of roundoff error for a zero value
         # resulting in a negative sd, so limit the sds here
         #
-        sd = np.sqrt(np.maximum(p1sd * p2sd, 0))
+        sd = numpy.sqrt(numpy.maximum(p1sd * p2sd, 0))
         corrnorm = corr12 / sd
         #
         # There's not much information for points where the standard
         # deviation is less than 1/100 of the maximum. We exclude these
         # from consideration.
         #
-        corrnorm[(unit < np.product(s) / 2) &
-                 (sd < np.mean(sd) / 100)] = 0
-        i, j = np.unravel_index(np.argmax(corrnorm), fshape)
+        corrnorm[(unit < numpy.product(s) / 2) &
+                 (sd < numpy.mean(sd) / 100)] = 0
+        i, j = numpy.unravel_index(numpy.argmax(corrnorm), fshape)
         #
         # Reflect values that fall into the second half
         #
@@ -465,16 +482,16 @@ class Align(cpm.Module):
         # TODO: Possibly use all 3 dimensions for color some day
         #
         if pixels1.ndim == 3:
-            pixels1 = np.mean(pixels1, 2)
+            pixels1 = numpy.mean(pixels1, 2)
         if pixels2.ndim == 3:
-            pixels2 = np.mean(pixels2, 2)
+            pixels2 = numpy.mean(pixels2, 2)
 
         def mutualinf(x, y, maskx, masky):
             x = x[maskx & masky]
             y = y[maskx & masky]
             return entropy(x) + entropy(y) - entropy2(x, y)
 
-        maxshape = np.maximum(pixels1.shape, pixels2.shape)
+        maxshape = numpy.maximum(pixels1.shape, pixels2.shape)
         pixels1 = reshape_image(pixels1, maxshape)
         pixels2 = reshape_image(pixels2, maxshape)
         mask1 = reshape_image(mask1, maxshape)
@@ -523,7 +540,7 @@ class Align(cpm.Module):
         else:
             output_shape = (shape[0], shape[1], pixel_data.shape[2])
             planes = [pixel_data[:, :, i] for i in range(pixel_data.shape[2])]
-        output_pixels = np.zeros(output_shape, pixel_data.dtype)
+        output_pixels = numpy.zeros(output_shape, pixel_data.dtype)
         for i, plane in enumerate(planes):
             #
             # Copy the input to the output
@@ -532,20 +549,20 @@ class Align(cpm.Module):
             p2[:, :] = p1[:, :]
         if pixel_data.ndim == 2:
             output_pixels.shape = output_pixels.shape[:2]
-        output_mask = np.zeros(shape, bool)
+        output_mask = numpy.zeros(shape, bool)
         p1, p2 = offset_slice(image.mask, output_mask, off_y, off_x)
         p2[:, :] = p1[:, :]
-        if np.all(output_mask):
+        if numpy.all(output_mask):
             output_mask = None
-        crop_mask = np.zeros(image.pixel_data.shape, bool)
+        crop_mask = numpy.zeros(image.pixel_data.shape, bool)
         p1, p2 = offset_slice(crop_mask, output_pixels, off_y, off_x)
         p1[:, :] = True
-        if np.all(crop_mask):
+        if numpy.all(crop_mask):
             crop_mask = None
-        output_image = cpi.Image(output_pixels,
-                                 mask=output_mask,
-                                 crop_mask=crop_mask,
-                                 parent_image=image)
+        output_image = cellprofiler.image.Image(output_pixels,
+                                                mask=output_mask,
+                                                crop_mask=crop_mask,
+                                                parent_image=image)
         workspace.image_set.add(output_image_name, output_image)
 
     def adjust_offsets(self, offsets, shapes):
@@ -562,12 +579,12 @@ class Align(cpm.Module):
         Based on the crop mode, adjust the offsets and shapes to optimize
         the cropping.
         '''
-        offsets = np.array(offsets)
-        shapes = np.array(shapes)
+        offsets = numpy.array(offsets)
+        shapes = numpy.array(shapes)
         if self.crop_mode == C_CROP:
             # modify the offsets so that all are negative
-            max_offset = np.max(offsets, 0)
-            offsets = offsets - max_offset[np.newaxis, :]
+            max_offset = numpy.max(offsets, 0)
+            offsets = offsets - max_offset[numpy.newaxis, :]
             #
             # Reduce each shape by the amount chopped off
             #
@@ -575,15 +592,15 @@ class Align(cpm.Module):
             #
             # Pick the smallest in each of the dimensions and repeat for all
             #
-            shape = np.min(shapes, 0)
-            shapes = np.tile(shape, len(shapes))
+            shape = numpy.min(shapes, 0)
+            shapes = numpy.tile(shape, len(shapes))
             shapes.shape = offsets.shape
         elif self.crop_mode == C_PAD:
             #
             # modify the offsets so that they are all positive
             #
-            min_offset = np.min(offsets, 0)
-            offsets = offsets - min_offset[np.newaxis, :]
+            min_offset = numpy.min(offsets, 0)
+            offsets = offsets - min_offset[numpy.newaxis, :]
             #
             # Expand each shape by the top-left padding
             #
@@ -591,18 +608,18 @@ class Align(cpm.Module):
             #
             # Pick the largest in each of the dimensions and repeat for all
             #
-            shape = np.max(shapes, 0)
-            shapes = np.tile(shape, len(shapes))
+            shape = numpy.max(shapes, 0)
+            shapes = numpy.tile(shape, len(shapes))
             shapes.shape = offsets.shape
         return offsets.tolist(), shapes.tolist()
 
     def get_categories(self, pipeline, object_name):
-        if object_name == cpmeas.IMAGE:
+        if object_name == cellprofiler.measurement.IMAGE:
             return [C_ALIGN]
         return []
 
     def get_measurements(self, pipeline, object_name, category):
-        if object_name == cpmeas.IMAGE and category == C_ALIGN:
+        if object_name == cellprofiler.measurement.IMAGE and category == C_ALIGN:
             return ["Xshift", "Yshift"]
         return []
 
@@ -623,9 +640,9 @@ class Align(cpm.Module):
                     for additional in self.additional_images])
         columns = []
         for axis in ('X', 'Y'):
-            columns += [(cpmeas.IMAGE,
+            columns += [(cellprofiler.measurement.IMAGE,
                          MEASUREMENT_FORMAT % (axis, target),
-                         cpmeas.COLTYPE_INTEGER)
+                         cellprofiler.measurement.COLTYPE_INTEGER)
                         for target in targets]
         return columns
 
@@ -647,13 +664,13 @@ class Align(cpm.Module):
             # 9:  AlternateImage2
             # 10: AlternateAlignedImage2
             new_setting_values = list(setting_values[:4])
-            if (setting_values[4] != cps.DO_NOT_USE and
-                        setting_values[5] != cps.DO_NOT_USE):
+            if (setting_values[4] != cellprofiler.setting.DO_NOT_USE and
+                        setting_values[5] != cellprofiler.setting.DO_NOT_USE):
                 new_setting_values += [setting_values[4], setting_values[5],
                                        A_SEPARATELY]
             for i in (7, 9):
-                if (setting_values[i] != cps.DO_NOT_USE and
-                            setting_values[i + 1] != cps.DO_NOT_USE):
+                if (setting_values[i] != cellprofiler.setting.DO_NOT_USE and
+                            setting_values[i + 1] != cellprofiler.setting.DO_NOT_USE):
                     new_setting_values += [setting_values[i],
                                            setting_values[i + 1],
                                            A_SIMILARLY]
@@ -677,13 +694,13 @@ class Align(cpm.Module):
             # 10: AlternateAlignedImage2
             # 11: Wants cropping.
             new_setting_values = list(setting_values[:4])
-            if (setting_values[4] != cps.DO_NOT_USE and
-                        setting_values[5] != cps.DO_NOT_USE):
+            if (setting_values[4] != cellprofiler.setting.DO_NOT_USE and
+                        setting_values[5] != cellprofiler.setting.DO_NOT_USE):
                 new_setting_values += [setting_values[4], setting_values[5],
                                        A_SEPARATELY]
             for i in (7, 9):
-                if (setting_values[i] != cps.DO_NOT_USE and
-                            setting_values[i + 1] != cps.DO_NOT_USE):
+                if (setting_values[i] != cellprofiler.setting.DO_NOT_USE and
+                            setting_values[i + 1] != cellprofiler.setting.DO_NOT_USE):
                     new_setting_values += [setting_values[i],
                                            setting_values[i + 1],
                                            A_SIMILARLY]
@@ -711,13 +728,13 @@ class Align(cpm.Module):
             # 14: MoreAlignedImageName4
             # 15: Wants cropping.
             new_setting_values = list(setting_values[:4])
-            if (setting_values[4] != cps.DO_NOT_USE and
-                        setting_values[5] != cps.DO_NOT_USE):
+            if (setting_values[4] != cellprofiler.setting.DO_NOT_USE and
+                        setting_values[5] != cellprofiler.setting.DO_NOT_USE):
                 new_setting_values += [setting_values[4], setting_values[5],
                                        A_SEPARATELY]
             for i in (7, 9, 11, 13):
-                if (setting_values[i] != cps.DO_NOT_USE and
-                            setting_values[i + 1] != cps.DO_NOT_USE):
+                if (setting_values[i] != cellprofiler.setting.DO_NOT_USE and
+                            setting_values[i + 1] != cellprofiler.setting.DO_NOT_USE):
                     new_setting_values += [setting_values[i],
                                            setting_values[i + 1],
                                            A_SIMILARLY]
@@ -735,7 +752,7 @@ class Align(cpm.Module):
             # wants_cropping changed to crop_mode
             setting_values = (
                 setting_values[:1] +
-                [C_CROP if setting_values[1] == cps.YES else C_SAME_SIZE] +
+                [C_CROP if setting_values[1] == cellprofiler.setting.YES else C_SAME_SIZE] +
                 setting_values[2:])
             variable_revision_number = 3
 
@@ -783,20 +800,20 @@ def cumsum_quadrant(x, i_forwards, j_forwards):
     if i_forwards:
         x = x.cumsum(0)
     else:
-        x = np.flipud(np.flipud(x).cumsum(0))
+        x = numpy.flipud(numpy.flipud(x).cumsum(0))
     if j_forwards:
         return x.cumsum(1)
     else:
-        return np.fliplr(np.fliplr(x).cumsum(1))
+        return numpy.fliplr(numpy.fliplr(x).cumsum(1))
 
 
 def entropy(x):
     '''The entropy of x as if x is a probability distribution'''
-    histogram = scind.histogram(x.astype(float), np.min(x), np.max(x), 256)
-    n = np.sum(histogram)
-    if n > 0 and np.max(histogram) > 0:
+    histogram = scipy.ndimage.histogram(x.astype(float), numpy.min(x), numpy.max(x), 256)
+    n = numpy.sum(histogram)
+    if n > 0 and numpy.max(histogram) > 0:
         histogram = histogram[histogram != 0]
-        return np.log2(n) - np.sum(histogram * np.log2(histogram)) / n
+        return numpy.log2(n) - numpy.sum(histogram * numpy.log2(histogram)) / n
     else:
         return 0
 
@@ -806,21 +823,21 @@ def entropy2(x, y):
     #
     # Bin each image into 256 gray levels
     #
-    x = (stretch(x) * 255).astype(int)
-    y = (stretch(y) * 255).astype(int)
+    x = (centrosome.filter.stretch(x) * 255).astype(int)
+    y = (centrosome.filter.stretch(y) * 255).astype(int)
     #
     # create an image where each pixel with the same X & Y gets
     # the same value
     #
     xy = 256 * x + y
     xy = xy.flatten()
-    sparse = scipy.sparse.coo_matrix((np.ones(xy.shape),
-                                      (xy, np.zeros(xy.shape))))
+    sparse = scipy.sparse.coo_matrix((numpy.ones(xy.shape),
+                                      (xy, numpy.zeros(xy.shape))))
     histogram = sparse.toarray()
-    n = np.sum(histogram)
-    if n > 0 and np.max(histogram) > 0:
+    n = numpy.sum(histogram)
+    if n > 0 and numpy.max(histogram) > 0:
         histogram = histogram[histogram > 0]
-        return np.log2(n) - np.sum(histogram * np.log2(histogram)) / n
+        return numpy.log2(n) - numpy.sum(histogram * numpy.log2(histogram)) / n
     else:
         return 0
 
@@ -830,6 +847,6 @@ def reshape_image(source, new_shape):
     if tuple(source.shape) == tuple(new_shape):
         return source
 
-    result = np.zeros(new_shape, source.dtype)
+    result = numpy.zeros(new_shape, source.dtype)
     result[:source.shape[0], :source.shape[1]] = source
     return result
