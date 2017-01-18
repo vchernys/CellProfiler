@@ -1,76 +1,64 @@
-import cellprofiler.icons
-from cellprofiler.gui.help import PROTIP_RECOMEND_ICON, PROTIP_AVOID_ICON, TECH_NOTE_ICON
-
-__doc__ = '''<b>Export To Database</b> exports data directly to a database, or in
-database readable format, including an imported file
-with column names and a CellProfiler Analyst properties file, if desired.
+"""
+<b>Export To Database</b> exports data directly to a database, or in database readable format, including an imported
+file with column names and a CellProfiler Analyst properties file, if desired.
 <hr>
-This module exports measurements directly to a database or to a SQL-compatible format.
-It allows you to create and import MySQL and associated data files into a
-database and gives you the option of creating
-a properties file for use with CellProfiler Analyst. Optionally, you can create
-an SQLite database file if you do not have a server on which to run MySQL itself.
-
-This module must be run at the end of a pipeline, or second to last if
-you are using the <b>CreateBatchFiles</b> module. If you forget this module, you
-can also run the <i>ExportDatabase</i> data tool after processing is complete;
-its functionality is the same.
-
-The database is set up with two primary tables. These tables are the
-<i>Per_Image</i> table and the <i>Per_Object</i> table (which may have a prefix if you
-specify):
+This module exports measurements directly to a database or to a SQL-compatible format. It allows you to create and
+import MySQL and associated data files into a database and gives you the option of creating a properties file for use
+with CellProfiler Analyst. Optionally, you can create an SQLite database file if you do not have a server on which to
+run MySQL itself. This module must be run at the end of a pipeline, or second to last if you are using the
+<b>CreateBatchFiles</b> module. If you forget this module, you can also run the <i>ExportDatabase</i> data tool after
+processing is complete; its functionality is the same. The database is set up with two primary tables. These tables are
+the <i>Per_Image</i> table and the <i>Per_Object</i> table (which may have a prefix if you specify):
 <ul>
-<li>The Per_Image table consists of all the per-image measurements made during the pipeline, plus
-per-image population statistics (such as mean, median, and standard deviation) of the object measurements. There is one
-per_image row for every "cycle" that CellProfiler processes (a cycle is usually a single field of view, and a single cycle
-usually contains several image files, each representing a different channel of the same field of view). </li>
-<li>The Per_Object table contains all the
-measurements for individual objects. There is one row of object
-measurements per object identified. The two tables are connected with the
-primary key column <i>ImageNumber</i>, which indicates the image to which each object belongs. The Per_Object table has another primary
-key called <i>ObjectNumber</i>, which is unique to each image. </li>
-</ul>
-
-Typically, if multiple types of objects are identified and measured in a pipeline,
-the numbers of those objects are equal to each other. For example, in most pipelines, each nucleus has exactly one cytoplasm, so the first row
-of the Per-Object table contains all of the information about object #1, including both nucleus- and cytoplasm-related measurements. If this
-one-to-one correspondence is <i>not</i> the case for all objects in the pipeline (for example, if dozens of speckles are identified and
-measured for each nucleus), then you must configure <b>ExportToDatabase</b> to export only objects that maintain the one-to-one correspondence
-(for example, export only <i>Nucleus</i> and <i>Cytoplasm</i>, but omit <i>Speckles</i>).
-
-If you have extracted "Plate" and "Well" metadata from image filenames or loaded "Plate" and "Well" metadata via the <b>Metadata</b>
-or <b>LoadData</b> modules, you can ask CellProfiler to create a "Per_Well" table, which aggregates object measurements across wells.
-This option will output a SQL file (regardless of whether you choose to write directly to the database)
-that can be used to create the Per_Well table. At the secure shell where you normally log in to MySQL, type
-the following, replacing the italics with references to your database and files:
-
-<tt>mysql -h <i>hostname</i> -u <i>username</i> -p <i>databasename</i> &lt <i>pathtoimages/perwellsetupfile.SQL</i></tt>
-
-The commands written by CellProfiler to create the Per_Well table will be executed.
-
-Oracle is not fully supported at present; you can create your own Oracle DB using
-the .csv output option and writing a simple script to upload to the database.
-
-<h4>Available measurements</h4>
-For details on the nomenclature used by CellProfiler for the exported measurements,
-see <i>Help > General Help > How Measurements Are Named</i>.
-
-See also <b>ExportToSpreadsheet</b>.
-
-'''
+    <li>The Per_Image table consists of all the per-image measurements made during the pipeline, plus per-image
+    population statistics (such as mean, median, and standard deviation) of the object measurements. There is one
+    per_image row for every "cycle" that CellProfiler processes (a cycle is usually a single field of view, and a
+    single cycle usually contains several image files, each representing a different channel of the same field of
+    view).</li>
+    <li>The Per_Object table contains all the measurements for individual objects. There is one row of object
+    measurements per object identified. The two tables are connected with the primary key column <i>ImageNumber</i>,
+    which indicates the image to which each object belongs. The Per_Object table has another primary key called
+    <i>ObjectNumber</i>, which is unique to each image.</li>
+</ul>Typically, if multiple types of objects are identified and measured in a pipeline, the numbers of those objects
+are equal to each other. For example, in most pipelines, each nucleus has exactly one cytoplasm, so the first row of
+the Per-Object table contains all of the information about object #1, including both nucleus- and cytoplasm-related
+measurements. If this one-to-one correspondence is <i>not</i> the case for all objects in the pipeline (for example, if
+dozens of speckles are identified and measured for each nucleus), then you must configure <b>ExportToDatabase</b> to
+export only objects that maintain the one-to-one correspondence (for example, export only <i>Nucleus</i> and
+<i>Cytoplasm</i>, but omit <i>Speckles</i>). If you have extracted "Plate" and "Well" metadata from image filenames or
+loaded "Plate" and "Well" metadata via the <b>Metadata</b> or <b>LoadData</b> modules, you can ask CellProfiler to
+create a "Per_Well" table, which aggregates object measurements across wells. This option will output a SQL file
+(regardless of whether you choose to write directly to the database) that can be used to create the Per_Well table. At
+the secure shell where you normally log in to MySQL, type the following, replacing the italics with references to your
+database and files: <tt>mysql -h <i>hostname</i> -u <i>username</i> -p <i>databasename</i> &lt;
+<i>pathtoimages/perwellsetupfile.SQL</i></tt> The commands written by CellProfiler to create the Per_Well table will be
+executed. Oracle is not fully supported at present; you can create your own Oracle DB using the .csv output option and
+writing a simple script to upload to the database.
+<h4>Available measurements</h4>For details on the nomenclature used by CellProfiler for the exported measurements, see
+<i>Help &gt; General Help &gt; How Measurements Are Named</i>. See also <b>ExportToSpreadsheet</b>.
+"""
 
 import csv
 import datetime
 import hashlib
 import logging
-import numpy as np
 import os
-import random
 import re
-import sys
-import traceback
+
+import numpy
+
+import cellprofiler.gui.help
+import cellprofiler.icons
+import cellprofiler.measurement
+import cellprofiler.module
+import cellprofiler.modules.loadimages
+import cellprofiler.pipeline
+import cellprofiler.preferences
+import cellprofiler.setting
+import identify
 
 logger = logging.getLogger(__name__)
+
 try:
     import MySQLdb
     from MySQLdb.cursors import SSCursor
@@ -79,22 +67,6 @@ try:
 except:
     logger.warning("MySQL could not be loaded.", exc_info=True)
     HAS_MYSQL_DB = False
-
-import cellprofiler
-import cellprofiler.module as cpm
-import cellprofiler.setting as cps
-from cellprofiler.setting import YES, NO
-import cellprofiler.preferences as cpprefs
-import cellprofiler.measurement as cpmeas
-from cellprofiler.pipeline import GROUP_INDEX, M_MODIFICATION_TIMESTAMP
-from identify import M_NUMBER_OBJECT_NUMBER
-from cellprofiler.modules.loadimages import C_FILE_NAME, C_PATH_NAME
-from cellprofiler.gui.help import USING_METADATA_TAGS_REF, USING_METADATA_HELP_REF, USING_METADATA_GROUPING_HELP_REF
-from cellprofiler.preferences import \
-    standardize_default_folder_names, DEFAULT_INPUT_FOLDER_NAME, \
-    DEFAULT_OUTPUT_FOLDER_NAME, DEFAULT_INPUT_SUBFOLDER_NAME, \
-    DEFAULT_OUTPUT_SUBFOLDER_NAME, ABSOLUTE_FOLDER_NAME, \
-    IO_FOLDER_CHOICE_HELP_TEXT, IO_WITH_METADATA_HELP_TEXT
 
 ##############################################
 #
@@ -161,8 +133,8 @@ W_PLATEVIEWER = "PlateViewer"
 W_BOXPLOT = "BoxPlot"
 W_DISPLAY_ALL = [W_SCATTERPLOT, W_HISTOGRAM, W_PLATEVIEWER, W_DENSITYPLOT, W_BOXPLOT]
 W_INDEX = "Index"
-W_TYPE_ALL = [cpmeas.IMAGE, cpmeas.OBJECT, W_INDEX]
-W_INDEX_ALL = [C_IMAGE_NUMBER, GROUP_INDEX]
+W_TYPE_ALL = [cellprofiler.measurement.IMAGE, cellprofiler.measurement.OBJECT, W_INDEX]
+W_INDEX_ALL = [C_IMAGE_NUMBER, cellprofiler.pipeline.GROUP_INDEX]
 
 ################################################
 #
@@ -229,7 +201,6 @@ OT_DICTIONARY = {
     "Single object table": OT_COMBINE,
     "Single object view": OT_VIEW
 }
-from identify import C_PARENT
 
 T_EXPERIMENT = "Experiment"
 T_EXPERIMENT_PROPERTIES = "Experiment_Properties"
@@ -342,157 +313,202 @@ class DBContext(object):
         self.connection.close()
 
 
-class ExportToDatabase(cpm.Module):
+class ExportToDatabase(cellprofiler.module.Module):
     module_name = "ExportToDatabase"
     variable_revision_number = 27
     category = ["File Processing", "Data Tools"]
 
     def create_settings(self):
-        db_choices = ([DB_MYSQL, DB_MYSQL_CSV, DB_SQLITE] if HAS_MYSQL_DB
-                      else [DB_MYSQL_CSV, DB_SQLITE])
+        db_choices = ([DB_MYSQL, DB_MYSQL_CSV, DB_SQLITE] if HAS_MYSQL_DB else [DB_MYSQL_CSV, DB_SQLITE])
+
         default_db = DB_MYSQL if HAS_MYSQL_DB else DB_MYSQL_CSV
-        self.db_type = cps.Choice(
-                "Database type",
-                db_choices, default_db, doc="""
+
+        self.db_type = cellprofiler.setting.Choice(
+            "Database type",
+            db_choices,
+            default_db,
+            doc="""
             Specify the type of database you want to use:
             <ul>
-            <li><i>%(DB_MYSQL)s:</i> Writes the data directly to a MySQL
-            database. MySQL is open-source software; you may require help from
-            your local Information Technology group to set up a database
-            server.</li>
-            <li><i>%(DB_MYSQL_CSV)s:</i> Writes a script file that
-            contains SQL statements for creating a database and uploading the
-            Per_Image and Per_Object tables. This option will write out the Per_Image
-            and Per_Object table data to two CSV files; you can use these files can be
-            used to import the data directly into an application
-            that accepts CSV data.</li>
-            <li><i>%(DB_SQLITE)s:</i> Writes SQLite files directly.
-            SQLite is simpler to set up than MySQL and
-            can more readily be run on your local computer rather than requiring a
-            database server. More information about SQLite can be found
-            <a href="http://www.sqlite.org/">here</a>. </li>
+                <li><i>{DB_MYSQL}:</i> Writes the data directly to a MySQL database. MySQL is open-source
+                software; you may require help from your local Information Technology group to set up a
+                database server.</li>
+                <li><i>{DB_MYSQL_CSV}:</i> Writes a script file that contains SQL statements for creating a
+                database and uploading the Per_Image and Per_Object tables. This option will write out the
+                Per_Image and Per_Object table data to two CSV files; you can use these files can be used to
+                import the data directly into an application that accepts CSV data.</li>
+                <li>
+                    <i>{DB_SQLITE}:</i> Writes SQLite files directly. SQLite is simpler to set up than MySQL
+                    and can more readily be run on your local computer rather than requiring a database server.
+                    More information about SQLite can be found <a href="http://www.sqlite.org/">here</a>.
+                </li>
             </ul>
             <dl>
-            <dd><img src="memory:%(TECH_NOTE_ICON)s">&nbsp;
-            If running this module on a computing cluster, there are a few
-            considerations to note:
+                <dd>
+                    <img src="memory:{TECH_NOTE_ICON}">&nbsp; If running this module on a computing cluster,
+                    there are a few considerations to note:
+                    <ul>
+                        <li>The <i>{DB_MYSQL}</i> option is well-suited for cluster use, since multiple jobs
+                        can write to the database simultaneously.</li>
+                        <li>The <i>{DB_SQLITE}</i> option is not as appropriate; a SQLite database only allows
+                        access by one job at a time.</li>
+                    </ul>
+                </dd>
+            </dl>
+            """.format(**{
+                "DB_MYSQL": DB_MYSQL,
+                "DB_MYSQL_CSV": DB_MYSQL_CSV,
+                "DB_SQLITE": DB_SQLITE,
+                "TECH_NOTE_ICON": cellprofiler.gui.help.TECH_NOTE_ICON,
+                "DB_MYSQL": DB_MYSQL,
+                "DB_SQLITE": DB_SQLITE
+            })
+        )
+
+        self.test_connection_button = cellprofiler.setting.DoSomething(
+            "Press this button to test the connection to the remote server using the current settings",
+            "Test connection",
+            self.test_connection,
+            doc="""
+            This button test the connection to MySQL server specified using the settings entered by the user.
+            """
+        )
+
+        self.db_name = cellprofiler.setting.Text(
+            "Database name",
+            "DefaultDB",
+            doc="Select a name for the database you want to use"
+        )
+
+        self.experiment_name = cellprofiler.setting.Text(
+            "Experiment name",
+            "MyExpt",
+            doc="""
+            Select a name for the experiment. This name will be registered in the database and linked to the
+            tables that <b>ExportToDatabase</b> creates. You will be able to select the experiment by name in
+            CellProfiler Analyst and will be able to find the experiment's tables through database queries.
+            """
+        )
+
+        self.want_table_prefix = cellprofiler.setting.Binary(
+            "Add a prefix to table names?",
+            True,
+            doc="""
+            Select whether you want to add a prefix to your table names. The default table names are
+            <i>Per_Image</i> for the per-image table and <i>Per_Object</i> for the per-object table. Adding a
+            prefix can be useful for bookkeeping purposes.
             <ul>
-            <li>The <i>%(DB_MYSQL)s</i> option is well-suited for cluster use, since
-            multiple jobs can write to the database simultaneously.</li>
-            <li>The <i>%(DB_SQLITE)s</i> option is not
-            as appropriate; a SQLite database only allows access by one job at a time.</li>
-            </ul>
-            </dd>
-            </dl>""" % globals())
+                <li>Select <i>{YES}</i> to add a user-specified prefix to the default table names. If you want
+                to distinguish multiple sets of data written to the same database, you probably want to use a
+                prefix.</li>
+                <li>Select <i>{NO}</i> to use the default table names. For a one-time export of data, this
+                option is fine.</li>
+            </ul>Whether you chose to use a prefix or not, CellProfiler will warn you if your choice entails
+            overwriting an existing table.
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "NO": cellprofiler.setting.NO
+            })
+        )
 
-        self.test_connection_button = cps.DoSomething(
-                "Press this button to test the connection to the remote server using the current settings",
-                "Test connection", self.test_connection, doc="""
-            This button test the connection to MySQL server specified using
-            the settings entered by the user.""")
-
-        self.db_name = cps.Text(
-                "Database name", "DefaultDB", doc="""
-            Select a name for the database you want to use""")
-
-        self.experiment_name = cps.Text(
-                "Experiment name", "MyExpt", doc="""
-            Select a name for the experiment. This name will be
-            registered in the database and linked to the tables that
-            <b>ExportToDatabase</b> creates. You will be able to select the experiment
-            by name in CellProfiler Analyst and will be able to find the
-            experiment's tables through database queries.""")
-
-        self.want_table_prefix = cps.Binary(
-                "Add a prefix to table names?", True, doc="""
-            Select whether you want to add a prefix to your table names. The
-            default table names are <i>Per_Image</i> for the per-image table and
-            <i>Per_Object</i> for the per-object table. Adding a prefix can be useful
-            for bookkeeping purposes.
-            <ul>
-            <li>Select <i>%(YES)s</i> to add a user-specified prefix to the default table names.
-            If you want to distinguish multiple sets of data written to the same
-            database, you probably want to use a prefix.</li>
-            <li>Select <i>%(NO)s</i> to use the default table names. For a one-time export of
-            data, this option is fine. </li>
-            </ul>
-            Whether you chose to use a prefix or not, CellProfiler will warn
-            you if your choice entails overwriting an existing table.""" % globals())
-
-        self.table_prefix = cps.Text(
-                "Table prefix", "MyExpt_", doc="""
+        self.table_prefix = cellprofiler.setting.Text(
+            "Table prefix",
+            "MyExpt_",
+            doc="""
             <i>(Used if Add a prefix to table names?</i> is selected)<br>
             Enter the table prefix you want to use.
-            <p>MySQL has a 64 character limit on the full name of the table.
-            If the combination of the table name and prefix exceeds this
-            limit, you will receive an error associated with this setting.</p>""")
+            <p>MySQL has a 64 character limit on the full name of the table. If the combination of the table
+            name and prefix exceeds this limit, you will receive an error associated with this setting.</p>
+            """
+        )
 
-        self.sql_file_prefix = cps.Text(
-                "SQL file prefix", "SQL_", doc="""
-            <i>(Used if %(DB_MYSQL_CSV)s is selected as the database type)</i><br>
-            Enter the prefix to be used to name the SQL file.""" % globals())
+        self.sql_file_prefix = cellprofiler.setting.Text(
+            "SQL file prefix",
+            "SQL_",
+            doc="""
+            <i>(Used if {DB_MYSQL_CSV} is selected as the database type)</i><br>
+            Enter the prefix to be used to name the SQL file.
+            """.format(**{
+                "DB_MYSQL_CSV": DB_MYSQL_CSV
+            })
+        )
 
-        self.directory = cps.DirectoryPath(
-                "Output file location",
-                dir_choices=[
-                    DEFAULT_OUTPUT_FOLDER_NAME, DEFAULT_INPUT_FOLDER_NAME,
-                    ABSOLUTE_FOLDER_NAME, DEFAULT_OUTPUT_SUBFOLDER_NAME,
-                    DEFAULT_INPUT_SUBFOLDER_NAME], doc="""
-            <i>(Used only when using a CSV or a SQLite database, and/or creating a properties or workspace file)</i><br>
-            This setting determines where the CSV files or SQLite database is saved if
-            you decide to write measurements to files instead of writing them
-            directly to the database. If you request a CellProfiler Analyst properties file
-            or workspace file, it will also be saved to this location. %(IO_FOLDER_CHOICE_HELP_TEXT)s
+        self.directory = cellprofiler.setting.DirectoryPath(
+            "Output file location",
+            dir_choices=[
+                cellprofiler.preferences.DEFAULT_OUTPUT_FOLDER_NAME,
+                cellprofiler.preferences.DEFAULT_INPUT_FOLDER_NAME,
+                cellprofiler.preferences.ABSOLUTE_FOLDER_NAME,
+                cellprofiler.preferences.DEFAULT_OUTPUT_SUBFOLDER_NAME,
+                cellprofiler.preferences.DEFAULT_INPUT_SUBFOLDER_NAME
+            ],
+            doc="""
+            <i>(Used only when using a CSV or a SQLite database, and/or creating a properties or workspace
+            file)</i><br>
+            This setting determines where the CSV files or SQLite database is saved if you decide to write
+            measurements to files instead of writing them directly to the database. If you request a
+            CellProfiler Analyst properties file or workspace file, it will also be saved to this location.
+            {IO_FOLDER_CHOICE_HELP_TEXT}
+            <p>{IO_WITH_METADATA_HELP_TEXT} {USING_METADATA_TAGS_REF}<br>
+            For instance, if you have a metadata tag named "Plate", you can create a per-plate folder by
+            selecting one of the subfolder options and then specifying the subfolder name with the "Plate"
+            metadata tag. The module will substitute the metadata values for the last image set processed for
+            any metadata tags in the folder name. {USING_METADATA_HELP_REF}.</p>
+            """.format(**{
+                "IO_FOLDER_CHOICE_HELP_TEXT": cellprofiler.preferences.IO_FOLDER_CHOICE_HELP_TEXT,
+                "IO_WITH_METADATA_HELP_TEXT": cellprofiler.preferences.IO_WITH_METADATA_HELP_TEXT,
+                "USING_METADATA_TAGS_REF": cellprofiler.gui.help.USING_METADATA_TAGS_REF,
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-            <p>%(IO_WITH_METADATA_HELP_TEXT)s %(USING_METADATA_TAGS_REF)s<br>
-            For instance, if you have a metadata tag named
-            "Plate", you can create a per-plate folder by selecting one of the subfolder options
-            and then specifying the subfolder name with the "Plate" metadata tag.
-            The module will substitute the metadata values for the last image set
-            processed for any metadata tags in the folder name. %(USING_METADATA_HELP_REF)s.</p>""" % globals())
-        self.directory.dir_choice = DEFAULT_OUTPUT_FOLDER_NAME
+        self.directory.dir_choice = cellprofiler.preferences.DEFAULT_OUTPUT_FOLDER_NAME
 
-        self.save_cpa_properties = cps.Binary(
-                "Create a CellProfiler Analyst properties file?",
-                False, doc="""
-            Select <i>%(YES)s</i> to generate a template properties file that will allow you to use
-            your new database with CellProfiler Analyst (a data
-            exploration tool which can also be downloaded from
-            <a href="http://www.cellprofiler.org/">http://www.cellprofiler.org/</a>).
-            The module will attempt to fill in as many as the entries as possible
-            based on the pipeline's settings, including the
-            server name, username and password if MySQL is used.""" % globals())
+        self.save_cpa_properties = cellprofiler.setting.Binary(
+            "Create a CellProfiler Analyst properties file?",
+            False,
+            doc="""
+            Choose <i>{YES}</i> to generate a template properties file that will allow you to use your new
+            database with CellProfiler Analyst (a data exploration tool which can also be downloaded from
+            <a href="http://www.cellprofiler.org/">http://www.cellprofiler.org/</a>). The module will attempt
+            to fill in as many as the entries as possible based on the pipeline's settings, including the
+            server name, username and password if MySQL is used.
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
-        self.location_object = cps.ObjectNameSubscriber(
-                "Which objects should be used for locations?", cps.NONE, doc="""
+        self.location_object = cellprofiler.setting.ObjectNameSubscriber(
+            "Which objects should be used for locations?",
+            cellprofiler.setting.NONE,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            CellProfiler Analyst displays cells during classification. This
-            setting determines which object centers will be used as the center
-            of the cells to be displayed. Choose one of the listed objects
-            and CellProfiler will save that object's location columns in
-            the properties file so that CellProfiler Analyst centers cells
-            using that object's center.
-            <p>You can manually change this choice in the properties file by
-            editing the <i>cell_x_loc</i> and <i>cell_y_loc</i> properties.
-            </p>
-            <p>Note that if there are no objects defined in the pipeline (e.g.
-            if only using MeasureImageQuality and/or Illumination Correction modules),
-            a warning will diplay until you choose <i>'None'</i> for the subsequent setting:
-            'Export measurements for all objects to the database?'.</p>
-            """ % globals())
+            CellProfiler Analyst displays cells during classification. This setting determines which object
+            centers will be used as the center of the cells to be displayed. Choose one of the listed objects
+            and CellProfiler will save that object's location columns in the properties file so that
+            CellProfiler Analyst centers cells using that object's center.
+            <p>You can manually change this choice in the properties file by editing the <i>cell_x_loc</i> and
+            <i>cell_y_loc</i> properties.</p>
+            <p>Note that if there are no objects defined in the pipeline (e.g. if only using
+            MeasureImageQuality and/or Illumination Correction modules), a warning will diplay until you choose
+            <i>'None'</i> for the subsequent setting: 'Export measurements for all objects to the
+            database?'.</p>
+            """
+        )
 
-        self.wants_properties_image_url_prepend = cps.Binary(
-                "Access CPA images via URL?", False,
-                doc="""
+        self.wants_properties_image_url_prepend = cellprofiler.setting.Binary(
+            "Access CPA images via URL?",
+            False,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            The image paths written to the database will be the absolute
-            path the image files on your computer. If you plan to make these
-            files accessible via the web, you can have CellProfiler Analyst prepend
-            a URL to your file name.
-            Eg: If an image is loaded from the path "/cellprofiler/images/" and you use
-            a url prepend of "http://mysite.com/", CellProfiler Analyst will look
-            for your file at "http://mysite.com/cellprofiler/images/"
-            """)
+            The image paths written to the database will be the absolute path the image files on your computer.
+            If you plan to make these files accessible via the web, you can have CellProfiler Analyst prepend a
+            URL to your file name. Eg: If an image is loaded from the path "/cellprofiler/images/" and you use
+            a url prepend of "http://mysite.com/", CellProfiler Analyst will look for your file at
+            "http://mysite.com/cellprofiler/images/"
+            """
+        )
+
         #
         # Hack: if user is on Broad IP, then plug in the imageweb url prepend
         #
@@ -505,644 +521,924 @@ class ExportToDatabase(cpm.Module):
         if 'broadinstitute' in fqdn.lower():  # Broad
             default_prepend = "http://imageweb/images/CPALinks"
 
-        self.properties_image_url_prepend = cps.Text(
-                "Enter an image url prepend if you plan to access your files via http",
-                default_prepend, doc="""
+        self.properties_image_url_prepend = cellprofiler.setting.Text(
+            "Enter an image url prepend if you plan to access your files via http",
+            default_prepend,
+            doc="""
             <i>(Used only if accessing CellProfiler Analyst images via URL)</i><br>
-            The image paths written to the database will be the absolute
-            path the image files on your computer. If you plan to make these
-            files accessible via the web, you can enter a url prefix here. Eg:
-            If an image is loaded from the path "/cellprofiler/images/" and you use
-            a url prepend of "http://mysite.com/", CellProfiler Analyst will look
-            for your file at "http://mysite.com/cellprofiler/images/"
-            <p>If you are not using the web to access your files (i.e., they are locally
-            aceesible by your computer), leave this setting blank.""")
+            The image paths written to the database will be the absolute path the image files on your computer.
+            If you plan to make these files accessible via the web, you can enter a url prefix here. Eg: If an
+            image is loaded from the path "/cellprofiler/images/" and you use a url prepend of
+            "http://mysite.com/", CellProfiler Analyst will look for your file at
+            "http://mysite.com/cellprofiler/images/"
+            <p>If you are not using the web to access your files (i.e., they are locally aceesible by your
+            computer), leave this setting blank.</p>
+            """
+        )
 
-        self.properties_plate_type = cps.Choice(
-                "Select the plate type",
-                PLATE_TYPES, doc="""
+        self.properties_plate_type = cellprofiler.setting.Choice(
+            "Select the plate type",
+            PLATE_TYPES,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            If you are using a multi-well plate or microarray, you can select the plate
-            type here. Supported types in CellProfiler Analyst are 96- and 384-well plates,
-            as well as 5600-spot microarrays. If you are not using a plate or microarray, select
-            <i>None</i>.""")
+            If you are using a multi-well plate or microarray, you can select the plate type here. Supported
+            types in CellProfiler Analyst are 96- and 384-well plates, as well as 5600-spot microarrays. If you
+            are not using a plate or microarray, select <i>None</i>.
+            """
+        )
 
-        self.properties_plate_metadata = cps.Choice(
-                "Select the plate metadata",
-                ["None"], choices_fn=self.get_metadata_choices, doc="""
+        self.properties_plate_metadata = cellprofiler.setting.Choice(
+            "Select the plate metadata",
+            ["None"],
+            choices_fn=self.get_metadata_choices,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            If you are using a multi-well plate or microarray, you can select the metadata corresponding
-            to the plate here. If there is no plate metadata associated with the image set, select
-            <i>None</i>.
-            <p>%(USING_METADATA_HELP_REF)s.</p>""" % globals())
+            If you are using a multi-well plate or microarray, you can select the metadata corresponding to the
+            plate here. If there is no plate metadata associated with the image set, select <i>None</i>.
+            <p>{USING_METADATA_HELP_REF}.</p>
+            """.format(**{
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-        self.properties_well_metadata = cps.Choice(
-                "Select the well metadata",
-                ["None"], choices_fn=self.get_metadata_choices, doc="""
+        self.properties_well_metadata = cellprofiler.setting.Choice(
+            "Select the well metadata",
+            ["None"],
+            choices_fn=self.get_metadata_choices,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            If you are using a multi-well plate or microarray, you can select the metadata corresponding
-            to the well here. If there is no well metadata associated with the image set, select
-            <i>None</i>.
-            <p>%(USING_METADATA_HELP_REF)s.</p>""" % globals())
+            If you are using a multi-well plate or microarray, you can select the metadata corresponding to the
+            well here. If there is no well metadata associated with the image set, select <i>None</i>.
+            <p>{USING_METADATA_HELP_REF}.</p>
+            """.format(**{
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-        self.properties_export_all_image_defaults = cps.Binary(
-                "Include information for all images, using default values?", True, doc="""
+        self.properties_export_all_image_defaults = cellprofiler.setting.Binary(
+            "Include information for all images, using default values?",
+            True,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            Select <i>%(YES)s</i> to include information in the properties file for all images. This
-            option will do the following:
+            Select <i>{YES}</i> to include information in the properties file for all images. This option will
+            do the following:
             <ul>
-            <li>All images loaded using the <b>Input</b> modules or saved in <b>SaveImages</b> will be included.</li>
-            <li>The CellProfiler image name will be used for the <i>image_name</i> field.</li>
-            <li>A channel color listed in the <i>image_channel_colors</i> field will be assigned to the image by default order.</li>
+                <li>All images loaded using the <b>Input</b> modules or saved in <b>SaveImages</b> will be
+                included.</li>
+                <li>The CellProfiler image name will be used for the <i>image_name</i> field.</li>
+                <li>A channel color listed in the <i>image_channel_colors</i> field will be assigned to the
+                image by default order.</li>
             </ul>
-            <p>Select <i>%(NO)s</i> to specify which images should be included or to override the automatic values.</p>""" % globals())
+            <p>Select <i>{NO}</i> to specify which images should be included or to override the automatic
+            values.</p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "NO": cellprofiler.setting.NO
+            })
+        )
 
         self.image_groups = []
-        self.image_group_count = cps.HiddenCount(self.image_groups, "Properties image group count")
-        self.add_image_group(False)
-        self.add_image_button = cps.DoSomething("", "Add another image",
-                                                self.add_image_group)
 
-        self.properties_wants_groups = cps.Binary(
-                "Do you want to add group fields?", False, doc="""
+        self.image_group_count = cellprofiler.setting.HiddenCount(
+            self.image_groups,
+            "Properties image group count"
+        )
+
+        self.add_image_group(False)
+
+        self.add_image_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another image",
+            self.add_image_group
+        )
+
+        self.properties_wants_groups = cellprofiler.setting.Binary(
+            "Do you want to add group fields?",
+            False,
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            <b>Please note that "groups" as defined by CellProfiler Analyst has nothing to do with "grouping" as defined by
-            CellProfiler in the Groups module.</b>
-            <p>Select <i>%(YES)s</i> to define a "group" for your image data (for example, when several images represent the same experimental
-            sample), by providing column(s) that identify unique images (the <i>image key</i>) to another set of columns
-            (the <i>group key</i>).</p>
+            <b>Please note that "groups" as defined by CellProfiler Analyst has nothing to do with "grouping"
+            as defined by CellProfiler in the Groups module.</b>
+            <p>Select <i>{YES}</i> to define a "group" for your image data (for example, when several images
+            represent the same experimental sample), by providing column(s) that identify unique images (the
+            <i>image key</i>) to another set of columns (the <i>group key</i>).</p>
             <p>The format for a group in CPA is:<br>
-            <code>group_SQL_&lt;XXX&gt; = &lt;MySQL SELECT statement that returns image-key columns followed by group-key columns&gt;</code>
-            For example, if you wanted to be able to group your data by unique plate names, you could define a group called
-            <i>SQL_Plate</i> as follows:<br>
+            <code>group_SQL_&lt;XXX&gt; = &lt;MySQL SELECT statement that returns image-key columns followed by
+            group-key columns&gt;</code> For example, if you wanted to be able to group your data by unique
+            plate names, you could define a group called <i>SQL_Plate</i> as follows:<br>
             <code>group_SQL_Plate = SELECT ImageNumber, Image_Metadata_Plate FROM Per_Image</code></p>
-            <p>Grouping is useful, for example, when you want to aggregate counts for each class of object and their scores
-            on a per-group basis (e.g., per-well) instead of on a per-image basis when scoring with Classifier. It will
-            also provide new options in the Classifier fetch menu so you can fetch objects from images with specific
-            values for the group columns.</p>""" % globals())
+            <p>Grouping is useful, for example, when you want to aggregate counts for each class of object and
+            their scores on a per-group basis (e.g., per-well) instead of on a per-image basis when scoring
+            with Classifier. It will also provide new options in the Classifier fetch menu so you can fetch
+            objects from images with specific values for the group columns.</p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
         self.group_field_groups = []
-        self.group_field_count = cps.HiddenCount(self.group_field_groups, "Properties group field count")
+
+        self.group_field_count = cellprofiler.setting.HiddenCount(
+            self.group_field_groups,
+            "Properties group field count"
+        )
+
         self.add_group_field_group(False)
-        self.add_group_field_button = cps.DoSomething("", "Add another group",
-                                                      self.add_group_field_group)
 
-        self.properties_wants_filters = cps.Binary(
-                "Do you want to add filter fields?", False, doc=
-                """<i>(Used only if creating a properties file)</i><br>
-                Select <i>%(YES)s</i> to specify a subset of the images in your experiment by defining a <i>filter</i>.
-                Filters are useful, for example, for fetching and scoring objects in Classifier or making graphs using the
-                plotting tools that satisfy a specific metadata contraint. """ % globals())
+        self.add_group_field_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another group",
+            self.add_group_field_group
+        )
 
-        self.create_filters_for_plates = cps.Binary(
-                "Automatically create a filter for each plate?", False, doc="""
+        self.properties_wants_filters = cellprofiler.setting.Binary(
+            "Do you want to add filter fields?",
+            False,
+            doc="""
+            <i>(Used only if creating a properties file)</i><br>
+            Select <i>{YES}</i> to specify a subset of the images in your experiment by defining a
+            <i>filter</i>. Filters are useful, for example, for fetching and scoring objects in Classifier or
+            making graphs using the plotting tools that satisfy a specific metadata contraint.
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
+
+        self.create_filters_for_plates = cellprofiler.setting.Binary(
+            "Automatically create a filter for each plate?",
+            False,
+            doc="""
             <i>(Used only if creating a properties file and specifiying an image data filter)</i><br>
-            If you have specified a plate metadata tag, selecting <i>%(YES)s</i> to create a set of filters
-            in the properties file, one for each plate.""" % globals())
+            If you have specified a plate metadata tag, selecting <i>{YES}</i> to create a set of filters in
+            the properties file, one for each plate.
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
         self.filter_field_groups = []
-        self.filter_field_count = cps.HiddenCount(self.filter_field_groups, "Properties filter field count")
-        self.add_filter_field_button = cps.DoSomething("", "Add another filter",
-                                                       self.add_filter_field_group)
 
-        self.properties_class_table_name = cps.Text(
-                "Enter a phenotype class table name if using the classifier tool",
-                '', doc="""
-            <i>(Used only if creating a properties file)</i><br>
-            If you are using the machine-learning tool in CellProfiler Analyst,
-            you can create an additional table in your database  which contains
-            the per-object phenotype labels. This table is produced after scoring
-            all the objects in your data set and will be named with the label given here.
-            Note that the actual class table will be named by prepending the table prefix
-            (if any) to what you enter here.
-            <p>You can manually change this choice in the properties file by
-            editing the <i>class_table</i> field. Leave this field blank if you are
-            not using the classifier or do not need the table written to the database</p>.""")
+        self.filter_field_count = cellprofiler.setting.HiddenCount(
+            self.filter_field_groups,
+            "Properties filter field count"
+        )
 
-        self.properties_classification_type = cps.Choice(
-                "Select the classification type",
-                CLASSIFIER_TYPE, doc="""
+        self.add_filter_field_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another filter",
+            self.add_filter_field_group
+        )
+
+        self.properties_class_table_name = cellprofiler.setting.Text(
+            "Enter a phenotype class table name if using the classifier tool",
+            "",
+            doc="""
             <i>(Used only if creating a properties file)</i><br>
-            Choose the type of classification this properties file will be used for. This
-            setting will create and set a field called <i>classification_type</i>.
-            Note that if you are not using the classifier tool, this setting will be ignored.
+            If you are using the machine-learning tool in CellProfiler Analyst, you can create an additional
+            table in your database which contains the per-object phenotype labels. This table is produced after
+            scoring all the objects in your data set and will be named with the label given here. Note that the
+            actual class table will be named by prepending the table prefix (if any) to what you enter here.
+            <p>You can manually change this choice in the properties file by editing the <i>class_table</i>
+            field. Leave this field blank if you are not using the classifier or do not need the table written
+            to the database</p>.
+            """
+        )
+
+        self.properties_classification_type = cellprofiler.setting.Choice(
+            "Select the classification type",
+            CLASSIFIER_TYPE,
+            doc="""
+            <i>(Used only if creating a properties file)</i><br>
+            Choose the type of classification this properties file will be used for. This setting will create
+            and set a field called <i>classification_type</i>. Note that if you are not using the classifier
+            tool, this setting will be ignored.
             <ul>
-            <li><i>%(CT_OBJECT)s:</i> Object-based classification, i.e., set <i>classification_type</i>
-            to "object" (or leave it blank).</li>
-            <li><i>%(CT_IMAGE)s:</i> Image-based classification, e.g., set <i>classification_type</i>
-            to "image".</li>
-            </ul>
-            You can manually change this choice in the properties file by
-            editing the <i>classification_type</i> field.
-            """ % globals())
+                <li><i>{CT_OBJECT}:</i> Object-based classification, i.e., set <i>classification_type</i> to
+                "object" (or leave it blank).</li>
+                <li><i>{CT_IMAGE}:</i> Image-based classification, e.g., set <i>classification_type</i> to
+                "image".</li>
+            </ul>You can manually change this choice in the properties file by editing the
+            <i>classification_type</i> field.
+            """.format(**{
+                "CT_OBJECT": CT_OBJECT,
+                "CT_IMAGE": CT_IMAGE
+            })
+        )
 
-        self.create_workspace_file = cps.Binary(
-                "Create a CellProfiler Analyst workspace file?", False, doc="""
-            Select <i>%(YES)s</i> to generate a workspace file for use with
-            CellProfiler Analyst, a data exploration tool which can
-            also be downloaded from <a href="http://www.cellprofiler.org/">
-            http://www.cellprofiler.org/</a>. A workspace file allows you
-            to open a selected set of measurements with the display tools
-            of your choice. This is useful, for example, if you want examine a standard
-            set of quality control image measurements for outliers.""" % globals())
+        self.create_workspace_file = cellprofiler.setting.Binary(
+            "Create a CellProfiler Analyst workspace file?",
+            False,
+            doc="""
+            Choose <i>{YES}</i> to generate a workspace file for use with CellProfiler Analyst, a data
+            exploration tool which can also be downloaded from <a href=
+            "http://www.cellprofiler.org/">http://www.cellprofiler.org/</a>. A workspace file allows you to
+            open a selected set of measurements with the display tools of your choice. This is useful, for
+            example, if you want examine a standard set of quality control image measurements for outliers.
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
-        self.divider = cps.Divider(line=True)
-        self.divider_props = cps.Divider(line=True)
-        self.divider_props_wkspace = cps.Divider(line=True)
-        self.divider_wkspace = cps.Divider(line=True)
+        self.divider = cellprofiler.setting.Divider(line=True)
+
+        self.divider_props = cellprofiler.setting.Divider(line=True)
+
+        self.divider_props_wkspace = cellprofiler.setting.Divider(line=True)
+
+        self.divider_wkspace = cellprofiler.setting.Divider(line=True)
 
         self.workspace_measurement_groups = []
-        self.workspace_measurement_count = cps.HiddenCount(self.workspace_measurement_groups,
-                                                           "Workspace measurement count")
+
+        self.workspace_measurement_count = cellprofiler.setting.HiddenCount(
+            self.workspace_measurement_groups,
+            "Workspace measurement count"
+        )
 
         def add_workspace_measurement_group(can_remove=True):
             self.add_workspace_measurement_group(can_remove)
 
         add_workspace_measurement_group(False)
-        self.add_workspace_measurement_button = cps.DoSomething("", "Add another measurement",
-                                                                self.add_workspace_measurement_group)
 
-        self.mysql_not_available = cps.Divider("Cannot write to MySQL directly - CSV file output only", line=False,
-                                               doc="""The MySQLdb python module could not be loaded.  MySQLdb is necessary for direct export.""")
+        self.add_workspace_measurement_button = cellprofiler.setting.DoSomething(
+            "",
+            "Add another measurement",
+            self.add_workspace_measurement_group
+        )
 
-        self.db_host = cps.Text("Database host", "")
+        self.mysql_not_available = cellprofiler.setting.Divider(
+            "Cannot write to MySQL directly - CSV file output only",
+            line=False,
+            doc="The MySQLdb python module could not be loaded.  MySQLdb is necessary for direct export."
+        )
 
-        self.db_user = cps.Text("Username", "")
+        self.db_host = cellprofiler.setting.Text("Database host", "")
 
-        self.db_passwd = cps.Text("Password", "")
+        self.db_user = cellprofiler.setting.Text("Username", "")
 
-        self.sqlite_file = cps.Text(
-                "Name the SQLite database file",
-                "DefaultDB.db", doc="""
+        self.db_passwd = cellprofiler.setting.Text("Password", "")
+
+        self.sqlite_file = cellprofiler.setting.Text(
+            "Name the SQLite database file",
+            "DefaultDB.db",
+            doc="""
             <i>(Used if SQLite selected as database type)</i><br>
-            Enter the name of the SQLite database filename to which you want to write.""")
+            Enter the name of the SQLite database filename to which you want to write.
+            """
+        )
 
-        self.wants_agg_mean = cps.Binary(
-                "Calculate the per-image mean values of object measurements?", True, doc="""
-            Select <i>%(YES)s</i> for <b>ExportToDatabase</b> to calculate population statistics over all the objects in each image
-            and store the results in the database. For instance, if
-            you are measuring the area of the Nuclei objects and you check the box for this option, <b>ExportToDatabase</b> will create a column in the Per_Image
-            table called "Mean_Nuclei_AreaShape_Area".
-            <p>You may not want to use <b>ExportToDatabase</b> to calculate these population statistics if your pipeline generates
-            a large number of per-object measurements; doing so might exceed database
-            column limits. These columns can be created manually for selected measurements directly in MySQL.
-            For instance, the following SQL command creates the Mean_Nuclei_AreaShape_Area column:
+        self.wants_agg_mean = cellprofiler.setting.Binary(
+            "Calculate the per-image mean values of object measurements?",
+            True,
+            doc="""
+            Choose <i>{YES}</i> for <b>ExportToDatabase</b> to calculate population statistics over all the
+            objects in each image and store the results in the database. For instance, if you are measuring the
+            area of the Nuclei objects and you check the box for this option, <b>ExportToDatabase</b> will
+            create a column in the Per_Image table called "Mean_Nuclei_AreaShape_Area".
+            <p>You may not want to use <b>ExportToDatabase</b> to calculate these population statistics if your
+            pipeline generates a large number of per-object measurements; doing so might exceed database column
+            limits. These columns can be created manually for selected measurements directly in MySQL. For
+            instance, the following SQL command creates the Mean_Nuclei_AreaShape_Area column:</p>
+            <p><tt>ALTER TABLE Per_Image ADD (Mean_Nuclei_AreaShape_Area);
+                        UPDATE Per_Image SET Mean_Nuclei_AreaShape_Area = (
+                            SELECT AVG(Nuclei_AreaShape_Area)
+                            FROM Per_Object
+                            WHERE Per_Image.ImageNumber = Per_Object.ImageNumber);</tt></p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
-                <p><tt>ALTER TABLE Per_Image ADD (Mean_Nuclei_AreaShape_Area);
-                UPDATE Per_Image SET Mean_Nuclei_AreaShape_Area =
-                    (SELECT AVG(Nuclei_AreaShape_Area)
-                     FROM Per_Object
-                     WHERE Per_Image.ImageNumber = Per_Object.ImageNumber);</tt>""" % globals())
+        self.wants_agg_median = cellprofiler.setting.Binary(
+            "Calculate the per-image median values of object measurements?",
+            False
+        )
 
-        self.wants_agg_median = cps.Binary("Calculate the per-image median values of object measurements?", False)
-        self.wants_agg_std_dev = cps.Binary("Calculate the per-image standard deviation values of object measurements?",
-                                            False)
+        self.wants_agg_std_dev = cellprofiler.setting.Binary(
+            "Calculate the per-image standard deviation values of object measurements?",
+            False
+        )
 
-        self.wants_agg_mean_well = cps.Binary(
-                "Calculate the per-well mean values of object measurements?", False, doc='''
-            Select <i>%(YES)s</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in each well
-            and store the results as columns in a "per-well" table in the database. For instance,
-            if you are measuring the area of the Nuclei objects and you check the aggregate
-            mean box in this module, <b>ExportToDatabase</b> will create a table in the database called
-            "Per_Well_avg", with a column called "Mean_Nuclei_AreaShape_Area". Selecting all three
-            aggregate measurements will create three per-well tables, one for each of the measurements.
+        self.wants_agg_mean_well = cellprofiler.setting.Binary(
+            "Calculate the per-well mean values of object measurements?",
+            False,
+            doc="""
+            Choose <i>{YES}</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in
+            each well and store the results as columns in a "per-well" table in the database. For instance, if
+            you are measuring the area of the Nuclei objects and you check the aggregate mean box in this
+            module, <b>ExportToDatabase</b> will create a table in the database called "Per_Well_avg", with a
+            column called "Mean_Nuclei_AreaShape_Area". Selecting all three aggregate measurements will create
+            three per-well tables, one for each of the measurements.
+            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be run on
+            your Per-Image and Per-Object tables to create the desired per-well table.</p>
+            <p><i>Note:</i> this option is only available if you have extracted plate and well metadata from
+            the filename using the <b>Metadata</b> or <b>LoadData</b> modules. It will write out a .sql file
+            with the statements necessary to create the Per_Well table, regardless of the option chosen above.
+            {USING_METADATA_HELP_REF}</p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be
-            run on your Per-Image and Per-Object tables to create the desired per-well table.
-            <p><i>Note:</i> this option is only available if you have extracted plate and well metadata
-            from the filename using the <b>Metadata</b> or <b>LoadData</b> modules.
-            It will write out a .sql file with the statements necessary to create the Per_Well
-            table, regardless of the option chosen above. %(USING_METADATA_HELP_REF)s''' % globals())
+        self.wants_agg_median_well = cellprofiler.setting.Binary(
+            "Calculate the per-well median values of object measurements?",
+            False,
+            doc="""
+            Choose <i>{YES}</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in
+            each well and store the results as columns in a "per-well" table in the database. For instance, if
+            you are measuring the area of the Nuclei objects and you check the aggregate median box in this
+            module, <b>ExportToDatabase</b> will create a table in the database called "Per_Well_median", with
+            a column called "Median_Nuclei_AreaShape_Area". Selecting all three aggregate measurements will
+            create three per-well tables, one for each of the measurements.
+            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be run on
+            your Per-Image and Per-Object tables to create the desired per-well table.</p>
+            <p><i>Note:</i> this option is only available if you have extracted plate and well metadata from
+            the filename using the <b>Metadata</b> or <b>LoadData</b> modules. It will write out a .sql file
+            with the statements necessary to create the Per_Well table, regardless of the option chosen above.
+            {USING_METADATA_HELP_REF}</p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-        self.wants_agg_median_well = cps.Binary(
-                "Calculate the per-well median values of object measurements?", False, doc='''
-            Select <i>%(YES)s</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in each well
-            and store the results as columns in a "per-well" table in the database. For instance,
-            if you are measuring the area of the Nuclei objects and you check the aggregate
-            median box in this module, <b>ExportToDatabase</b> will create a table in the database called
-            "Per_Well_median", with a column called "Median_Nuclei_AreaShape_Area". Selecting all
-            three aggregate measurements will create three per-well tables, one for each of the measurements.
+        self.wants_agg_std_dev_well = cellprofiler.setting.Binary(
+            "Calculate the per-well standard deviation values of object measurements?",
+            False,
+            doc="""
+            Choose <i>{YES}</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in
+            each well and store the results as columns in a "per-well" table in the database. For instance, if
+            you are measuring the area of the Nuclei objects and you check the aggregate standard deviation box
+            in this module, <b>ExportToDatabase</b> will create a table in the database called "Per_Well_std",
+            with a column called "Mean_Nuclei_AreaShape_Area". Selecting all three aggregate measurements will
+            create three per-well tables, one for each of the measurements.
+            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be run on
+            your Per-Image and Per-Object tables to create the desired per-well table.</p>
+            <p><i>Note:</i> this option is only available if you have extracted plate and well metadata from
+            the filename using the <b>Metadata</b> or <b>LoadData</b> modules. It will write out a .sql file
+            with the statements necessary to create the Per_Well table, regardless of the option chosen above.
+            {USING_METADATA_HELP_REF}</p>
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "USING_METADATA_HELP_REF": cellprofiler.gui.help.USING_METADATA_HELP_REF
+            })
+        )
 
-            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be run on your
-            Per-Image and Per-Object tables to create the desired per-well table.
-            <p><i>Note:</i> this option is only
-            available if you have extracted plate and well metadata from the filename using
-            the <b>Metadata</b> or <b>LoadData</b> modules.
-            It will write out a .sql file with the statements necessary to create the Per_Well
-            table, regardless of the option chosen above. %(USING_METADATA_HELP_REF)s''' % globals())
-
-        self.wants_agg_std_dev_well = cps.Binary(
-                "Calculate the per-well standard deviation values of object measurements?", False, doc='''
-            Select <i>%(YES)s</i> for <b>ExportToDatabase</b> to calculate statistics over all the objects in each well
-            and store the results as columns in a "per-well" table in the database. For instance,
-            if you are measuring the area of the Nuclei objects and you check the aggregate
-            standard deviation box in this module, <b>ExportToDatabase</b> will create a table in the database called
-            "Per_Well_std", with a column called "Mean_Nuclei_AreaShape_Area".  Selecting all
-            three aggregate measurements will create three per-well tables, one for each of the measurements.
-            <p>The per-well functionality will create the appropriate lines in a .SQL file, which can be run on your
-            Per-Image and Per-Object tables to create the desired per-well table.
-            <p><i>Note:</i> this option is only
-            available if you have extracted plate and well metadata from the filename
-            using the <b>Metadata</b> or <b>LoadData</b> modules.
-            It will write out a .sql file with the statements necessary to create the Per_Well
-            table, regardless of the option chosen above. %(USING_METADATA_HELP_REF)s''' % globals())
-
-        self.objects_choice = cps.Choice(
-                "Export measurements for all objects to the database?",
-                [O_ALL, O_NONE, O_SELECT], doc="""
+        self.objects_choice = cellprofiler.setting.Choice(
+            "Export measurements for all objects to the database?",
+            [O_ALL, O_NONE, O_SELECT],
+            doc="""
             This option lets you choose the objects whose measurements will be saved in the Per_Object and
             Per_Well(s) database tables.
             <ul>
-            <li><i>%(O_ALL)s:</i> Export measurements from all objects.</li>
-            <li><i>%(O_NONE)s:</i> Do not export data to a Per_Object table. Save only Per_Image or Per_Well
-            measurements (which nonetheless include population statistics from objects).</li>
-            <li><i>%(O_SELECT)s:</i> Select the objects you want to export from a list.</li>
-            </ul>""" % globals())
+                <li><i>{O_ALL}:</i> Export measurements from all objects.</li>
+                <li><i>{O_NONE}:</i> Do not export data to a Per_Object table. Save only Per_Image or Per_Well
+                measurements (which nonetheless include population statistics from objects).</li>
+                <li><i>{O_SELECT}:</i> Select the objects you want to export from a list.</li>
+            </ul>
+            """.format(**{
+                "O_ALL": O_ALL,
+                "O_NONE": O_NONE,
+                "O_SELECT": O_SELECT
+            })
+        )
 
-        self.objects_list = cps.ObjectSubscriberMultiChoice(
-                "Select the objects", doc="""
+        self.objects_list = cellprofiler.setting.ObjectSubscriberMultiChoice(
+            "Select the objects",
+            doc="""
             <i>(Used only if Select is chosen for adding objects)</i><br>
-            Choose one or more objects from this list (click using shift or command keys to select
-            multiple objects). The list includes
-            the objects that were created by prior modules. If you choose an
-            object, its measurements will be written out to the Per_Object and/or
-            Per_Well(s) tables, otherwise, the object's measurements will be skipped.""")
+            Choose one or more objects from this list (click using shift or command keys to select multiple
+            objects). The list includes the objects that were created by prior modules. If you choose an
+            object, its measurements will be written out to the Per_Object and/or Per_Well(s) tables,
+            otherwise, the object's measurements will be skipped.
+            """
+        )
 
-        self.wants_relationship_table_setting = cps.Binary(
-                "Export object relationships?", True, doc="""
+        self.wants_relationship_table_setting = cellprofiler.setting.Binary(
+            "Export object relationships?",
+            True,
+            doc="""
             <i>(Used only for pipelines which relate objects to each other)</i><br>
-            Select <i>%(YES)s</i> to export object relationships to the
-            RelationshipsView view. Only certain modules produce
-            relationships that can be exported by this setting; see
-            the <b>TrackObjects</b>, <b>RelateObjects</b>,
-            <b>MeasureObjectNeighbors</b> and the <b>Identify</b> modules
-            for more details.
-            <p>This view has the following columns:
-            <ul><li><i>%(COL_MODULE_NUMBER)s</i>: the module number of the
-            module that produced the relationship. The first module in the
-            pipeline is module #1, etc.</li>
-            <li><i>%(COL_RELATIONSHIP)s</i>: the relationship between the two
-            objects, for instance, "Parent".</li>
-            <li><i>%(COL_OBJECT_NAME1)s, %(COL_OBJECT_NAME2)s</i>:
-            the names of the two objects being related.</li>
-            <li><i>%(COL_IMAGE_NUMBER1)s, %(COL_OBJECT_NUMBER1)s</i>:
-            the image number and object number of the first object in the
-            relationship</li>
-            <li><i>%(COL_IMAGE_NUMBER2)s, %(COL_OBJECT_NUMBER2)s</i>:
-            the image number and object number of the second object in the
-            relationship</li>
+            Select <i>{YES}</i> to export object relationships to the RelationshipsView view. Only certain
+            modules produce relationships that can be exported by this setting; see the <b>TrackObjects</b>,
+            <b>RelateObjects</b>, <b>MeasureObjectNeighbors</b> and the <b>Identify</b> modules for more
+            details.
+            <p>This view has the following columns:</p>
+            <ul>
+                <li><i>{COL_MODULE_NUMBER}</i>: the module number of the module that produced the
+                relationship. The first module in the pipeline is module #1, etc.</li>
+                <li><i>{COL_RELATIONSHIP}</i>: the relationship between the two objects, for instance,
+                "Parent".</li>
+                <li><i>{COL_OBJECT_NAME1}, {COL_OBJECT_NAME2}</i>: the names of the two objects being
+                related.</li>
+                <li><i>{COL_IMAGE_NUMBER1}, {COL_OBJECT_NUMBER1}</i>: the image number and object number of
+                the first object in the relationship</li>
+                <li><i>{COL_IMAGE_NUMBER2}, {COL_OBJECT_NUMBER2}</i>: the image number and object number of
+                the second object in the relationship</li>
             </ul>
-            </p>""" % globals())
+            """.format(**{
+                "YES": cellprofiler.setting.YES,
+                "COL_MODULE_NUMBER": COL_MODULE_NUMBER,
+                "COL_RELATIONSHIP": COL_RELATIONSHIP,
+                "COL_OBJECT_NAME1": COL_OBJECT_NAME1,
+                "COL_OBJECT_NAME2": COL_OBJECT_NAME2,
+                "COL_IMAGE_NUMBER1": COL_IMAGE_NUMBER1,
+                "COL_OBJECT_NUMBER1": COL_OBJECT_NUMBER1,
+                "COL_IMAGE_NUMBER2": COL_IMAGE_NUMBER2,
+                "COL_OBJECT_NUMBER2": COL_OBJECT_NUMBER2
+            })
+        )
 
-        self.max_column_size = cps.Integer(
-                "Maximum # of characters in a column name", 64,
-                minval=10, maxval=64, doc="""
-            This setting limits the number of characters that can appear
-            in the name of a field in the database. MySQL has a limit of 64
-            characters per field, but also has an overall limit on the number of characters
-            in all of the columns of a table. <b>ExportToDatabase</b> will
-            shorten all of the column names by removing characters, at the
-            same time guaranteeing that no two columns have the same name.""")
+        self.max_column_size = cellprofiler.setting.Integer(
+            "Maximum # of characters in a column name",
+            64,
+            minval=10,
+            maxval=64,
+            doc="""
+            This setting limits the number of characters that can appear in the name of a field in the
+            database. MySQL has a limit of 64 characters per field, but also has an overall limit on the number
+            of characters in all of the columns of a table. <b>ExportToDatabase</b> will shorten all of the
+            column names by removing characters, at the same time guaranteeing that no two columns have the
+            same name.
+            """
+        )
 
-        self.separate_object_tables = cps.Choice(
-                "Create one table per object, a single object table or a single object view?",
-                [OT_COMBINE, OT_PER_OBJECT, OT_VIEW], doc="""
-            <b>ExportToDatabase</b> can create either one table
-            for each type of object exported or a single
-            object table.<br><ul>
-            <li><i>%(OT_PER_OBJECT)s</i> creates one
-            table for each object type you export. The table name will reflect
-            the name of your objects. The table will have one row for each
-            of your objects. You can write SQL queries that join tables using
-            the "Number_ObjectNumber" columns of parent objects (such as those
-            created by <b>IdentifyPrimaryObjects</b>) with the corresponding
-            "Parent_... column" of the child objects. Choose
-            <i>%(OT_PER_OBJECT)s</i> if parent objects can have more than
-            one child object, if you want a relational representation of
-            your objects in the database,
-            or if you need to split columns among different
-            tables and shorten column names because of database limitations.</li>
-            <li><i>%(OT_COMBINE)s</i> creates a single
-            database table that records the object measurements. <b>
-            ExportToDatabase</b> will prepend each column name with the
-            name of the object associated with that column's measurement.
-            Each row of the table will have measurements for all objects
-            that have the same image and object number. Choose
-            <i>%(OT_COMBINE)s</i> if parent objects have a single child,
-            or if you want a simple table structure in your database. You can
-            combine the measurements for all or selected objects in this way.</li>
-            <li><i>%(OT_VIEW)s</i> creates a single
-            database view to contain the object measurements. A <i>view</i> is a
-            virtual database table which can be used to package together multiple
-            per-object tables into a single structure that is accessed just like a
-            regular table. Choose <i>%(OT_VIEW)s</i> if you want to combine multiple
-            objects but using <i>%(OT_COMBINE)s</i> would produce a table that hits
-            the database size limitations. <br>
-            An important note is that only objects that are related as primary, secondary
-            or tertiary objects to each other should be combined in a view. This is
-            because the view expects a one-to-one relationship between the combined objects. If
-            you are selecting objects for the view, the module will warn you if they are
-            not related in this way.
-            </li>
-            </ul>""" % globals())
+        self.separate_object_tables = cellprofiler.setting.Choice(
+            "Create one table per object, a single object table or a single object view?",
+            [OT_COMBINE, OT_PER_OBJECT, OT_VIEW],
+            doc="""
+            <b>ExportToDatabase</b> can create either one table for each type of object exported or a single
+            object table.<br>
+            <ul>
+                <li><i>{OT_PER_OBJECT}</i> creates one table for each object type you export. The table name
+                will reflect the name of your objects. The table will have one row for each of your objects.
+                You can write SQL queries that join tables using the "Number_ObjectNumber" columns of parent
+                objects (such as those created by <b>IdentifyPrimaryObjects</b>) with the corresponding
+                "Parent_... column" of the child objects. Choose <i>{OT_PER_OBJECT}</i> if parent objects can
+                have more than one child object, if you want a relational representation of your objects in the
+                database, or if you need to split columns among different tables and shorten column names
+                because of database limitations.</li>
+                <li><i>{OT_COMBINE}</i> creates a single database table that records the object measurements.
+                <b>ExportToDatabase</b> will prepend each column name with the name of the object associated
+                with that column's measurement. Each row of the table will have measurements for all objects
+                that have the same image and object number. Choose <i>{OT_COMBINE}</i> if parent objects have a
+                single child, or if you want a simple table structure in your database. You can combine the
+                measurements for all or selected objects in this way.</li>
+                <li><i>{OT_VIEW}</i> creates a single database view to contain the object measurements. A
+                <i>view</i> is a virtual database table which can be used to package together multiple
+                per-object tables into a single structure that is accessed just like a regular table. Choose
+                <i>{OT_VIEW}</i> if you want to combine multiple objects but using <i>{OT_COMBINE}</i> would
+                produce a table that hits the database size limitations.<br>
+                An important note is that only objects that are related as primary, secondary or tertiary
+                objects to each other should be combined in a view. This is because the view expects a
+                one-to-one relationship between the combined objects. If you are selecting objects for the
+                view, the module will warn you if they are not related in this way.</li>
+            </ul>
+            """.format(**{
+                "OT_PER_OBJECT": OT_PER_OBJECT,
+                "OT_COMBINE": OT_COMBINE,
+                "OT_VIEW": OT_VIEW
+            })
+        )
 
-        self.want_image_thumbnails = cps.Binary(
-                "Write image thumbnails directly to the database?", False, doc="""
-            <i>(Used only if %(DB_MYSQL)s or %(DB_SQLITE)s are selected as database type)</i><br>
-            Select %(YES)s if you'd like to write image thumbnails directly
-            into the database. This will slow down the writing step, but will
-            enable new functionality in CellProfiler Analyst such as quickly
-            viewing images in the Plate Viewer tool by selecting "thumbnail"
-            from the "Well display" dropdown.""" % globals())
+        self.want_image_thumbnails = cellprofiler.setting.Binary(
+            "Write image thumbnails directly to the database?",
+            False,
+            doc="""
+            <i>(Used only if {DB_MYSQL} or {DB_SQLITE} are selected as database type)</i><br>
+            Select {YES} if you'd like to write image thumbnails directly into the database. This will slow
+            down the writing step, but will enable new functionality in CellProfiler Analyst such as quickly
+            viewing images in the Plate Viewer tool by selecting "thumbnail" from the "Well display" dropdown.
+            """.format(**{
+                "DB_MYSQL": DB_MYSQL,
+                "DB_SQLITE": DB_SQLITE,
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
-        self.thumbnail_image_names = cps.ImageNameSubscriberMultiChoice(
-                "Select the images for which you want to save thumbnails", doc="""
-            <i>(Used only if %(DB_MYSQL)s or %(DB_SQLITE)s are selected as database type
-            and writing thumbnails is selected)</i><br>
-            Select the images that you wish to save as thumbnails to
-            the database. Make multiple selections by using Ctrl-Click (Windows)
-            or Command-Click (Mac); """ % globals())
+        self.thumbnail_image_names = cellprofiler.setting.ImageNameSubscriberMultiChoice(
+            "Select the images for which you want to save thumbnails",
+            doc="""
+            <i>(Used only if {DB_MYSQL} or {DB_SQLITE} are selected as database type and writing thumbnails is
+            selected)</i><br>
+            Select the images that you wish to save as thumbnails to the database. Make multiple selections by
+            using Ctrl-Click (Windows) or Command-Click (Mac);
+            """.format(**{
+                "DB_MYSQL": DB_MYSQL,
+                "DB_SQLITE": DB_SQLITE
+            })
+        )
 
-        self.auto_scale_thumbnail_intensities = cps.Binary(
-                "Auto-scale thumbnail pixel intensities?", True,
-                doc="""
-            <i>(Used only if %(DB_MYSQL)s or %(DB_SQLITE)s are selected as database type
-            and writing thumbnails is selected)</i><br>
-            Select <i>%(YES)s</i> if you'd like to automatically rescale
-            the thumbnail pixel intensities to the range 0-1, where 0 is
-            black/unsaturated, and 1 is white/saturated.""" % globals())
+        self.auto_scale_thumbnail_intensities = cellprofiler.setting.Binary(
+            "Auto-scale thumbnail pixel intensities?",
+            True,
+            doc="""
+            <i>(Used only if {DB_MYSQL} or {DB_SQLITE} are selected as database type and writing thumbnails is
+            selected)</i><br>
+            Select <i>{YES}</i> if you'd like to automatically rescale the thumbnail pixel intensities to the
+            range 0-1, where 0 is black/unsaturated, and 1 is white/saturated.
+            """.format(**{
+                "DB_MYSQL": DB_MYSQL,
+                "DB_SQLITE": DB_SQLITE,
+                "YES": cellprofiler.setting.YES
+            })
+        )
 
-        self.allow_overwrite = cps.Choice(
-                "Overwrite without warning?",
-                [OVERWRITE_NEVER, OVERWRITE_DATA, OVERWRITE_ALL],
-                doc="""
-            <b>ExportToDatabase</b> creates tables and databases at the start
-            of a run when writing directly to a MySQL or SQLite database. It
-            writes SQL scripts and CSVs when not writing directly. It also
-            can write CellProfiler Analysis property files. In some cases,
-            it is appropriate to run CellProfiler and append to or overwrite
-            the data in existing tables, for instance when running several
-            CellProfiler instances which each process a range of the experiment's
-            image sets. In other cases, such as when the measurements to be written
-            have changed, the data tables must be dropped completely.
-            <br>
+        self.allow_overwrite = cellprofiler.setting.Choice(
+            "Overwrite without warning?",
+            [OVERWRITE_NEVER, OVERWRITE_DATA, OVERWRITE_ALL],
+            doc="""
+            <b>ExportToDatabase</b> creates tables and databases at the start of a run when writing directly to
+            a MySQL or SQLite database. It writes SQL scripts and CSVs when not writing directly. It also can
+            write CellProfiler Analysis property files. In some cases, it is appropriate to run CellProfiler
+            and append to or overwrite the data in existing tables, for instance when running several
+            CellProfiler instances which each process a range of the experiment's image sets. In other cases,
+            such as when the measurements to be written have changed, the data tables must be dropped
+            completely.<br>
             You can choose fromm three options to conrtol overwriting behavior:
-            <ul><li><i>%(OVERWRITE_NEVER)s:</i> <b>ExportToDatabase</b> will
-            ask before dropping and recreating tables unless you are running
-            headless. CellProfiler will exit if running headless if the tables
-            exist and this option is chosen.</li>
-            <li><i>%(OVERWRITE_DATA)s:</i> <b>ExportToDatabase</b> will keep
-            the existing tables if present and will overwrite the data. Choose
-            <i>%(OVERWRITE_DATA)s</i> if you are breaking your experiment
-            into ranges of image sets and running each range on a separate
-            instance of CellProfiler.</li>
-            <li><i>%(OVERWRITE_ALL)s:</i> <b>ExportToDatabase</b> will
-            drop previous versions of tables at the start of a run. This option
-            is appropriate if you are using the <b>CreateBatchFiles</b> module;
-            your tables will be created by the run that creates the batch
-            data file. The actual analysis runs that utilize the <code>Batch_data</code>
-            file will use the existing tables without trying to recreate them.</li>
+            <ul>
+                <li><i>{OVERWRITE_NEVER}:</i> <b>ExportToDatabase</b> will ask before dropping and recreating
+                tables unless you are running headless. CellProfiler will exit if running headless if the
+                tables exist and this option is chosen.</li>
+                <li><i>{OVERWRITE_DATA}:</i> <b>ExportToDatabase</b> will keep the existing tables if present
+                and will overwrite the data. Choose <i>{OVERWRITE_DATA}</i> if you are breaking your experiment
+                into ranges of image sets and running each range on a separate instance of CellProfiler.</li>
+                <li><i>{OVERWRITE_ALL}:</i> <b>ExportToDatabase</b> will drop previous versions of tables at
+                the start of a run. This option is appropriate if you are using the <b>CreateBatchFiles</b>
+                module; your tables will be created by the run that creates the batch data file. The actual
+                analysis runs that utilize the <code>Batch_data</code> file will use the existing tables
+                without trying to recreate them.</li>
             </ul>
-            """ % globals())
+            """.format(**{
+                "OVERWRITE_NEVER": OVERWRITE_NEVER,
+                "OVERWRITE_DATA": OVERWRITE_DATA,
+                "OVERWRITE_ALL": OVERWRITE_ALL
+            })
+        )
 
     def add_image_group(self, can_remove=True):
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
 
         group.can_remove = can_remove
 
         group.append(
-                "image_cols", cps.Choice(
-                        "Select an image to include", [cps.NONE],
-                        choices_fn=self.get_property_file_image_choices, doc="""
+            "image_cols",
+            cellprofiler.setting.Choice(
+                "Select an image to include",
+                [cellprofiler.setting.NONE],
+                choices_fn=self.get_property_file_image_choices,
+                doc="""
                 <i>(Used only if creating a properties file and specifiying the image information)</i><br>
                 Choose image name to include it in the properties file of images.
-                <p>The images in the drop-down correspond to images that have been:
+                <p>The images in the drop-down correspond to images that have been:</p>
                 <ul>
-                <li>Loaded using one of the <b>Load</b> modules.</li>
-                <li>Saved with the <b>SaveImages</b> module, with the corresponding file and path information stored.</li>
-                </ul>
-                If you do not see your desired image listed, check the settings on these modules.</p>"""))
+                    <li>Loaded using one of the <b>Load</b> modules.</li>
+                    <li>Saved with the <b>SaveImages</b> module, with the corresponding file and path information
+                    stored.</li>
+                </ul>If you do not see your desired image listed, check the settings on these modules.
+                <p></p>
+                """
+            )
+        )
 
         group.append(
-                "wants_automatic_image_name", cps.Binary(
-                        "Use the image name for the display?", True, doc=
-                        """<i>(Used only if creating a properties file and specifiying the image information)</i><br>
-                        Select <i>%(YES)s</i> to use the image name as given above for the displayed name.
-                        <p>Select <i>%(NO)s</i> to name the file yourself.</p>""" % globals()))
+            "wants_automatic_image_name",
+            cellprofiler.setting.Binary(
+                "Use the image name for the display?",
+                True,
+                doc="""
+                <i>(Used only if creating a properties file and specifiying the image information)</i><br>
+                Select <i>{YES}</i> to use the image name as given above for the displayed name.
+                <p>Select <i>{NO}</i> to name the file yourself.</p>
+                """.format(**{
+                    "YES": cellprofiler.setting.YES,
+                    "NO": cellprofiler.setting.NO
+                })
+            )
+        )
 
         group.append(
-                "image_name", cps.Text(
-                        "Image name", "Channel%d" % (len(self.image_groups) + 1), doc=
-                        """<i>(Used only if creating a properties file, specifiying the image information and naming the image)</i><br>
-                        Enter a name for the specified image"""))
+            "image_name",
+            cellprofiler.setting.Text(
+                "Image name",
+                "Channel{:d}".format(len(self.image_groups) + 1),
+                doc="""
+                <i>(Used only if creating a properties file, specifiying the image information and naming the
+                image)</i><br>
+                Enter a name for the specified image
+                """
+            )
+        )
 
         default_color = (COLOR_ORDER[len(self.image_groups)]
                          if len(self.image_groups) < len(COLOR_ORDER)
                          else COLOR_ORDER[0])
 
         group.append(
-                "image_channel_colors", cps.Choice(
-                        "Channel color", COLOR_ORDER, default_color, doc="""
+            "image_channel_colors",
+            cellprofiler.setting.Choice(
+                "Channel color",
+                COLOR_ORDER,
+                default_color,
+                doc="""
                 <i>(Used only if creating a properties file and specifiying the image information)</i><br>
-                Enter a color to display this channel."""))
+                Enter a color to display this channel.
+                """
+            )
+        )
 
-        group.append("remover", cps.RemoveSettingButton("", "Remove this image", self.image_groups, group))
+        group.append(
+            "remover",
+            cellprofiler.setting.RemoveSettingButton("", "Remove this image", self.image_groups, group)
+        )
 
-        group.append("divider", cps.Divider(line=False))
+        group.append("divider", cellprofiler.setting.Divider(line=False))
 
         self.image_groups.append(group)
 
     def add_group_field_group(self, can_remove=True):
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
+
         group.can_remove = can_remove
+
         group.append(
-                "group_name", cps.Text(
-                        "Enter the name of the group", '', doc="""
-            <i>(Used only if creating a properties file and specifiying an image data group)</i><br>
-            Enter a name for the group. Only alphanumeric characters and underscores are permitted."""))
+            "group_name",
+            cellprofiler.setting.Text(
+                "Enter the name of the group",
+                "",
+                doc="""
+                <i>(Used only if creating a properties file and specifiying an image data group)</i><br>
+                Enter a name for the group. Only alphanumeric characters and underscores are permitted.
+                """
+            )
+        )
+
         group.append(
-                "group_statement", cps.Text(
-                        "Enter the per-image columns which define the group, separated by commas", GROUP_COL_DEFAULT,
-                        doc="""
-            <i>(Used only if creating a properties file and specifiying an image data group)</i><br>
-            To define a group, enter the image key columns followed by group key columns, each separated by commas.
-            <p>In CellProfiler, the image key column is always given the name as <i>ImageNumber</i>; group keys
-            are typically metadata columns which are always prefixed with <i>Image_Metadata_</i>. For example, if you
-            wanted to be able to group your data by unique plate and well metadata tags, you could define a
-            group with the following MySQL statement:<br>
-            <code>group_SQL_Plate = SELECT ImageNumber, Image_Metadata_Plate, Image_Metadata_Well FROM Per_Image</code><br>
-            For this example, the columns to enter in this setting would be:<br>
-            <code>ImageNumber, Image_Metadata_Plate, Image_Metadata_Well</code></p>
-            <p>Groups are specified as MySQL statements in the properties file, but please note that the full SELECT and
-            FROM clauses will be added automatically, so there is no need to enter them here.</p>"""))
-        group.append("remover", cps.RemoveSettingButton("", "Remove this group", self.group_field_groups, group))
-        group.append("divider", cps.Divider(line=True))
+            "group_statement",
+            cellprofiler.setting.Text(
+                "Enter the per-image columns which define the group, separated by commas",
+                GROUP_COL_DEFAULT,
+                doc="""
+                <i>(Used only if creating a properties file and specifiying an image data group)</i><br>
+                To define a group, enter the image key columns followed by group key columns, each separated by
+                commas.
+                <p>In CellProfiler, the image key column is always given the name as <i>ImageNumber</i>; group keys
+                are typically metadata columns which are always prefixed with <i>Image_Metadata_</i>. For example,
+                if you wanted to be able to group your data by unique plate and well metadata tags, you could
+                define a group with the following MySQL statement:<br>
+                <code>group_SQL_Plate = SELECT ImageNumber, Image_Metadata_Plate, Image_Metadata_Well FROM
+                Per_Image</code><br>
+                For this example, the columns to enter in this setting would be:<br>
+                <code>ImageNumber, Image_Metadata_Plate, Image_Metadata_Well</code></p>
+                <p>Groups are specified as MySQL statements in the properties file, but please note that the full
+                SELECT and FROM clauses will be added automatically, so there is no need to enter them here.</p>
+                """
+            )
+        )
+
+        group.append(
+            "remover",
+            cellprofiler.setting.RemoveSettingButton("", "Remove this group", self.group_field_groups, group)
+        )
+
+        group.append("divider", cellprofiler.setting.Divider(line=True))
 
         self.group_field_groups.append(group)
 
     def add_filter_field_group(self, can_remove=True):
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
 
         group.can_remove = can_remove
 
         group.append(
-                "filter_name", cps.Text(
-                        "Enter the name of the filter", '', doc="""
-            <i>(Used only if creating a properties file and specifiying an image data filter)</i><br>
-            Enter a name for the filter. Only alphanumeric characters and underscores are permitted."""))
+            "filter_name",
+            cellprofiler.setting.Text(
+                "Enter the name of the filter",
+                "",
+                doc="""
+                <i>(Used only if creating a properties file and specifiying an image data filter)</i><br>
+                Enter a name for the filter. Only alphanumeric characters and underscores are permitted.
+                """
+            )
+        )
 
         group.append(
-                "filter_statement", cps.Text(
-                        "Enter the MySQL WHERE clause to define a filter", '', doc="""
-            <i>(Used only if creating a properties file and specifiying an image data filter)</i><br>
-            To define a filter, enter a MySQL <i>WHERE</i> clause that returns image-keys for images you want to include.
-            For example, here is a filter that returns only images from plate 1:<br>
-            <code>Image_Metadata_Plate = '1'</code><br>
-            Here is a filter returns only images from with a gene column that starts with CDK:
-            <code>Image_Metadata_Gene REGEXP 'CDK.*'</code><br>
-            <p>Filters are specified as MySQL statements in the properties file, but please note that the full SELECT and
-            FROM clauses (as well as the WHERE keyword) will be added automatically, so there is no need to enter them here.</p>"""))
-        group.append("remover", cps.RemoveSettingButton("", "Remove this filter", self.filter_field_groups, group))
-        group.append("divider", cps.Divider(line=True))
+            "filter_statement",
+            cellprofiler.setting.Text(
+                "Enter the MySQL WHERE clause to define a filter",
+                "",
+                doc="""
+                <i>(Used only if creating a properties file and specifiying an image data filter)</i><br>
+                To define a filter, enter a MySQL <i>WHERE</i> clause that returns image-keys for images you want
+                to include. For example, here is a filter that returns only images from plate 1:<br>
+                <code>Image_Metadata_Plate = '1'</code><br>
+                Here is a filter returns only images from with a gene column that starts with CDK:
+                <code>Image_Metadata_Gene REGEXP 'CDK.*'</code><br>
+                <p>Filters are specified as MySQL statements in the properties file, but please note that the full
+                SELECT and FROM clauses (as well as the WHERE keyword) will be added automatically, so there is no
+                need to enter them here.</p>
+                """
+            )
+        )
+        group.append(
+            "remover",
+            cellprofiler.setting.RemoveSettingButton("", "Remove this filter", self.filter_field_groups, group)
+        )
+
+
+        group.append("divider", cellprofiler.setting.Divider(line=True))
 
         self.filter_field_groups.append(group)
 
     def add_workspace_measurement_group(self, can_remove=True):
-        group = cps.SettingsGroup()
+        group = cellprofiler.setting.SettingsGroup()
         self.workspace_measurement_groups.append(group)
 
         group.can_remove = can_remove
 
-        group.append("divider", cps.Divider(line=False))
+        group.append("divider", cellprofiler.setting.Divider(line=False))
 
         group.append(
-                "measurement_display", cps.Choice(
-                        "Select the measurement display tool",
-                        W_DISPLAY_ALL, doc="""
-            <i>(Used only if creating a workspace file)</i><br>
-            Select what display tool in CPA you want to use to open the
-            measurements.
-            <ul>
-            <li>%(W_SCATTERPLOT)s</li>
-            <li>%(W_HISTOGRAM)s</li>
-            <li>%(W_DENSITYPLOT)s</li>
-            <li>%(W_PLATEVIEWER)s</li>
-            <li>%(W_BOXPLOT)s</li>
-            </ul>""" % globals()))
+            "measurement_display",
+            cellprofiler.setting.Choice(
+                "Select the measurement display tool",
+                W_DISPLAY_ALL,
+                doc="""
+                <i>(Used only if creating a workspace file)</i><br>
+                Select what display tool in CPA you want to use to open the measurements.
+                <ul>
+                    <li>{W_SCATTERPLOT}</li>
+                    <li>{W_HISTOGRAM}</li>
+                    <li>{W_DENSITYPLOT}</li>
+                    <li>{W_PLATEVIEWER}</li>
+                    <li>{W_BOXPLOT}</li>
+                </ul>
+                """.format(**{
+                    "W_SCATTERPLOT": W_SCATTERPLOT,
+                    "W_HISTOGRAM": W_HISTOGRAM,
+                    "W_DENSITYPLOT": W_DENSITYPLOT,
+                    "W_PLATEVIEWER": W_PLATEVIEWER,
+                    "W_BOXPLOT": W_BOXPLOT
+                })
+            )
+        )
 
         def measurement_type_help():
             return """
-                <i>(Used only if creating a workspace file)</i><br>
-                You can plot two types of measurements:
-                <ul>
-                <li><i>Image:</i> For a per-image measurement, one numerical value is
-                recorded for each image analyzed.
-                Per-image measurements are produced by
-                many modules. Many have <b>MeasureImage</b> in the name but others do not
-                (e.g., the number of objects in each image is a per-image
-                measurement made by <b>IdentifyObject</b>
-                modules).</li>
-                <li><i>Object:</i> For a per-object measurement, each identified
-                object is measured, so there may be none or many
-                numerical values recorded for each image analyzed. These are usually produced by
-                modules with <b>MeasureObject</b> in the name.</li>
-                </ul>""" % globals()
+            <i>(Used only if creating a workspace file)</i><br>
+            You can plot two types of measurements:
+            <ul>
+                <li><i>Image:</i> For a per-image measurement, one numerical value is recorded for each image
+                analyzed. Per-image measurements are produced by many modules. Many have <b>MeasureImage</b> in
+                the name but others do not (e.g., the number of objects in each image is a per-image
+                measurement made by <b>IdentifyObject</b> modules).</li>
+                <li><i>Object:</i> For a per-object measurement, each identified object is measured, so there
+                may be none or many numerical values recorded for each image analyzed. These are usually
+                produced by modules with <b>MeasureObject</b> in the name.</li>
+            </ul>
+            """
 
         def object_name_help():
-            return """<i>(Used only if creating a workspace file)</i><br>
-                Select the object that you want to measure from the list.
-                This should be an object created by a previous module such as
-                <b>IdentifyPrimaryObjects</b>, <b>IdentifySecondaryObjects</b>, or
-                <b>IdentifyTertiaryObjects</b>."""
+            return """
+            <i>(Used only if creating a workspace file)</i><br>
+            Select the object that you want to measure from the list. This should be an object created by a
+            previous module such as <b>IdentifyPrimaryObjects</b>, <b>IdentifySecondaryObjects</b>, or
+            <b>IdentifyTertiaryObjects</b>.
+            """
 
         def measurement_name_help():
-            return """<i>(Used only if creating a workspace file)</i><br>
-            Select the measurement to be plotted on the desired axis."""
+            return """
+            <i>(Used only if creating a workspace file)</i><br>
+            Select the measurement to be plotted on the desired axis.
+            """
 
         def index_name_help():
-            return """<i>(Used only if creating a workspace file and an index is plotted)</i><br>
+            return """
+            <i>(Used only if creating a workspace file and an index is plotted)</i><br>
             Select the index to be plot on the selected axis. Two options are available:
             <ul>
-            <li><i>%(C_IMAGE_NUMBER)s:</i> In CellProfiler, the unique identifier for each image
-            is always given this name. Selecting this option allows you to plot a single measurement
-            for each image indexed by the order it was processed.</li>
-            <li><i>%(GROUP_INDEX)s:</i> This identifier is used in cases where grouping is applied.
-            Each image in a group is given an index indicating the order it was processed. Selecting
-            this option allows you to plot a set of measurements grouped by a common index.
-            %(USING_METADATA_GROUPING_HELP_REF)s
-            </li>
-            </ul>""" % globals()
+                <li><i>{C_IMAGE_NUMBER}:</i> In CellProfiler, the unique identifier for each image is always
+                given this name. Selecting this option allows you to plot a single measurement for each image
+                indexed by the order it was processed.</li>
+                <li><i>{GROUP_INDEX}:</i> This identifier is used in cases where grouping is applied. Each
+                image in a group is given an index indicating the order it was processed. Selecting this option
+                allows you to plot a set of measurements grouped by a common index.
+                {USING_METADATA_GROUPING_HELP_REF}</li>
+            </ul>
+            """.format(**{
+                "C_IMAGE_NUMBER": C_IMAGE_NUMBER,
+                "GROUP_INDEX": cellprofiler.pipeline.GROUP_INDEX,
+                "USING_METADATA_GROUPING_HELP_REF": cellprofiler.gui.help.USING_METADATA_GROUPING_HELP_REF
+            })
 
         group.append(
-                "x_measurement_type", cps.Choice(
-                        "Type of measurement to plot on the X-axis",
-                        W_TYPE_ALL, doc=measurement_type_help()))
+            "x_measurement_type",
+            cellprofiler.setting.Choice(
+                "Type of measurement to plot on the X-axis",
+                W_TYPE_ALL,
+                doc=measurement_type_help()
+            )
+        )
 
         group.append(
-                "x_object_name", cps.ObjectNameSubscriber(
-                        "Enter the object name", cps.NONE,
-                        doc=object_name_help()))
+            "x_object_name",
+            cellprofiler.setting.ObjectNameSubscriber(
+                "Enter the object name",
+                cellprofiler.setting.NONE,
+                doc=object_name_help()
+            )
+        )
 
         def object_fn_x():
-            if group.x_measurement_type.value in (cpmeas.IMAGE, cpmeas.EXPERIMENT):
+            if group.x_measurement_type.value in (cellprofiler.measurement.IMAGE, cellprofiler.measurement.EXPERIMENT):
                 return group.x_measurement_type.value
-            elif group.x_measurement_type.value == cpmeas.OBJECT:
+            elif group.x_measurement_type.value == cellprofiler.measurement.OBJECT:
                 return group.x_object_name.value
             else:
                 raise NotImplementedError("Measurement type %s is not supported" %
                                           group.x_measurement_type.value)
 
         group.append(
-                "x_measurement_name", cps.Measurement(
-                        "Select the X-axis measurement", object_fn_x,
-                        doc=measurement_name_help()))
+            "x_measurement_name",
+            cellprofiler.setting.Measurement(
+                "Select the X-axis measurement",
+                object_fn_x,
+                doc=measurement_name_help()
+            )
+        )
 
         group.append(
-                "x_index_name", cps.Choice(
-                        "Select the X-axis index", W_INDEX_ALL,
-                        doc=index_name_help()))
+            "x_index_name",
+            cellprofiler.setting.Choice(
+                "Select the X-axis index",
+                W_INDEX_ALL,
+                doc=index_name_help()
+            )
+        )
 
         group.append(
-                "y_measurement_type", cps.Choice(
-                        "Type of measurement to plot on the Y-axis",
-                        W_TYPE_ALL, doc=measurement_type_help()))
+            "y_measurement_type",
+            cellprofiler.setting.Choice(
+                "Type of measurement to plot on the Y-axis",
+                W_TYPE_ALL,
+                doc=measurement_type_help()
+            )
+        )
 
         group.append(
-                "y_object_name", cps.ObjectNameSubscriber(
-                        "Enter the object name", cps.NONE,
-                        doc=object_name_help()))
+            "y_object_name",
+            cellprofiler.setting.ObjectNameSubscriber(
+                "Enter the object name",
+                cellprofiler.setting.NONE,
+                doc=object_name_help()
+            )
+        )
 
         def object_fn_y():
-            if group.y_measurement_type.value == cpmeas.IMAGE:
-                return cpmeas.IMAGE
-            elif group.y_measurement_type.value == cpmeas.OBJECT:
+            if group.y_measurement_type.value == cellprofiler.measurement.IMAGE:
+                return cellprofiler.measurement.IMAGE
+            elif group.y_measurement_type.value == cellprofiler.measurement.OBJECT:
                 return group.y_object_name.value
             else:
                 raise NotImplementedError("Measurement type %s is not supported" %
                                           group.y_measurement_type.value)
 
         group.append(
-                "y_measurement_name", cps.Measurement(
-                        "Select the Y-axis measurement", object_fn_y,
-                        doc=measurement_name_help()))
+            "y_measurement_name",
+            cellprofiler.setting.Measurement(
+                "Select the Y-axis measurement",
+                object_fn_y,
+                doc=measurement_name_help()
+            )
+        )
 
         group.append(
-                "y_index_name", cps.Choice(
-                        "Select the Y-axis index", W_INDEX_ALL,
-                        doc=index_name_help()))
+            "y_index_name",
+            cellprofiler.setting.Choice(
+                "Select the Y-axis index",
+                W_INDEX_ALL,
+                doc=index_name_help()
+            )
+        )
 
         if can_remove:
-            group.append("remove_button", cps.RemoveSettingButton(
-                    "", "Remove this measurement", self.workspace_measurement_groups, group))
+            group.append(
+                "remove_button",
+                cellprofiler.setting.RemoveSettingButton(
+                    "",
+                    "Remove this measurement",
+                    self.workspace_measurement_groups, group
+                )
+            )
 
     def get_metadata_choices(self, pipeline):
         columns = pipeline.get_measurement_columns()
         choices = ["None"]
         for column in columns:
             object_name, feature, coltype = column[:3]
-            choice = feature[(len(cpmeas.C_METADATA) + 1):]
-            if (object_name == cpmeas.IMAGE and
-                    feature.startswith(cpmeas.C_METADATA)):
+            choice = feature[(len(cellprofiler.measurement.C_METADATA) + 1):]
+            if (object_name == cellprofiler.measurement.IMAGE and
+                    feature.startswith(cellprofiler.measurement.C_METADATA)):
                 choices.append(choice)
         return choices
 
@@ -1151,8 +1447,8 @@ class ExportToDatabase(cpm.Module):
         image_names = []
         for column in columns:
             object_name, feature, coltype = column[:3]
-            choice = feature[(len(C_FILE_NAME) + 1):]
-            if object_name == cpmeas.IMAGE and (feature.startswith(C_FILE_NAME)):
+            choice = feature[(len(cellprofiler.modules.loadimages.C_FILE_NAME) + 1):]
+            if object_name == cellprofiler.measurement.IMAGE and (feature.startswith(cellprofiler.modules.loadimages.C_FILE_NAME)):
                 image_names.append(choice)
         return image_names
 
@@ -1320,7 +1616,7 @@ class ExportToDatabase(cpm.Module):
         result += [workspace_group.x_measurement_type]
         if workspace_group.x_measurement_type == W_INDEX:
             result += [workspace_group.x_index_name]
-        elif workspace_group.x_measurement_type == cpmeas.OBJECT:
+        elif workspace_group.x_measurement_type == cellprofiler.measurement.OBJECT:
             result += [workspace_group.x_object_name, workspace_group.x_measurement_name]
         else:
             result += [workspace_group.x_measurement_name]
@@ -1328,7 +1624,7 @@ class ExportToDatabase(cpm.Module):
             result += [workspace_group.y_measurement_type]
             if workspace_group.y_measurement_type == W_INDEX:
                 result += [workspace_group.y_index_name]
-            elif workspace_group.y_measurement_type == cpmeas.OBJECT:
+            elif workspace_group.y_measurement_type == cellprofiler.measurement.OBJECT:
                 result += [workspace_group.y_object_name, workspace_group.y_measurement_name]
             else:
                 result += [workspace_group.y_measurement_name]
@@ -1417,37 +1713,37 @@ class ExportToDatabase(cpm.Module):
     def validate_module(self, pipeline):
         if self.want_table_prefix.value:
             if not re.match("^[A-Za-z][A-Za-z0-9_]+$", self.table_prefix.value):
-                raise cps.ValidationError("Invalid table prefix", self.table_prefix)
+                raise cellprofiler.setting.ValidationError("Invalid table prefix", self.table_prefix)
 
         if self.db_type == DB_MYSQL:
             if not re.match("^[A-Za-z0-9_]+$", self.db_name.value):
-                raise cps.ValidationError("The database name has invalid characters", self.db_name)
+                raise cellprofiler.setting.ValidationError("The database name has invalid characters", self.db_name)
         elif self.db_type == DB_SQLITE:
             if not re.match("^[A-Za-z0-9_].*$", self.sqlite_file.value):
-                raise cps.ValidationError("The sqlite file name has invalid characters", self.sqlite_file)
+                raise cellprofiler.setting.ValidationError("The sqlite file name has invalid characters", self.sqlite_file)
 
         if self.db_type == DB_MYSQL:
             if not re.match("^[A-Za-z0-9_].*$", self.db_host.value):
-                raise cps.ValidationError("The database host name has invalid characters", self.db_host)
+                raise cellprofiler.setting.ValidationError("The database host name has invalid characters", self.db_host)
             if not re.match("^[A-Za-z0-9_]+$", self.db_user.value):
-                raise cps.ValidationError("The database user name has invalid characters", self.db_user)
+                raise cellprofiler.setting.ValidationError("The database user name has invalid characters", self.db_user)
         else:
             if not re.match("^[A-Za-z][A-Za-z0-9_]+$", self.sql_file_prefix.value):
-                raise cps.ValidationError("Invalid SQL file prefix", self.sql_file_prefix)
+                raise cellprofiler.setting.ValidationError("Invalid SQL file prefix", self.sql_file_prefix)
 
         if self.objects_choice == O_SELECT:
             self.objects_list.load_choices(pipeline)
             if len(self.objects_list.choices) == 0:
-                raise cps.ValidationError("Please choose at least one object", self.objects_choice)
+                raise cellprofiler.setting.ValidationError("Please choose at least one object", self.objects_choice)
 
         if self.save_cpa_properties:
             if self.properties_plate_metadata == NONE_CHOICE and (
                         self.properties_wants_filters.value and self.create_filters_for_plates.value):
-                raise cps.ValidationError("You must specify the plate metadata", self.create_filters_for_plates)
+                raise cellprofiler.setting.ValidationError("You must specify the plate metadata", self.create_filters_for_plates)
 
         if self.want_image_thumbnails:
             if not self.thumbnail_image_names.get_selections():
-                raise cps.ValidationError("Please choose at least one image", self.thumbnail_image_names)
+                raise cellprofiler.setting.ValidationError("Please choose at least one image", self.thumbnail_image_names)
 
         if self.want_table_prefix:
             max_char = 64
@@ -1457,21 +1753,21 @@ class ExportToDatabase(cpm.Module):
                 OT_COMBINE, OT_VIEW) else []
             table_name_lengths += [len(self.table_prefix.value + "Per_" + x) for x in self.objects_list.value.split(
                     ',')] if self.objects_choice != O_NONE and self.separate_object_tables == OT_PER_OBJECT else []
-            if np.any(np.array(table_name_lengths) > max_char):
+            if numpy.any(numpy.array(table_name_lengths) > max_char):
                 msg = "A table name exceeds the %d character allowed by MySQL.\n" % max_char
                 msg += "Please shorten the prefix if using a single object table,\n"
                 msg += "and/or the object name if using separate tables."
-                raise cps.ValidationError(msg, self.table_prefix)
+                raise cellprofiler.setting.ValidationError(msg, self.table_prefix)
 
     def validate_module_warnings(self, pipeline):
         '''Warn user re: Test mode '''
         if pipeline.test_mode:
-            raise cps.ValidationError("ExportToDatabase does not produce output in Test Mode",
-                                      self.db_type)
+            raise cellprofiler.setting.ValidationError("ExportToDatabase does not produce output in Test Mode",
+                                                       self.db_type)
 
         # Warn user if using SQLLite and CreateBatchFiles
         if self.db_type == DB_SQLITE and pipeline.has_create_batch_module():
-            raise cps.ValidationError(
+            raise cellprofiler.setting.ValidationError(
                     "Only one process can access a SQLite database at a time.\n"
                     "Database operations will fail if you run more than one copy\n"
                     "of CellProfiler simultaneously. You can run multiple copies\n"
@@ -1481,7 +1777,7 @@ class ExportToDatabase(cpm.Module):
 
         '''Warn user that they will have to merge tables to use CPA'''
         if self.objects_choice != O_NONE and self.separate_object_tables == OT_PER_OBJECT:
-            raise cps.ValidationError(
+            raise cellprofiler.setting.ValidationError(
                     ("You will have to merge the separate object tables in order\n"
                      "to use CellProfiler Analyst fully, or you will be restricted\n"
                      "to only one object's data at a time in CPA. Choose\n"
@@ -1492,31 +1788,31 @@ class ExportToDatabase(cpm.Module):
         if self.save_cpa_properties:
             warning_string = "CellProfiler Analyst will not recogize this %s because it contains invalid characters. Allowable characters are letters, numbers and underscores."
             if not re.match("^[\w]*$", self.location_object.value):
-                raise cps.ValidationError(warning_string % "object", self.location_object)
+                raise cellprofiler.setting.ValidationError(warning_string % "object", self.location_object)
 
             if self.properties_wants_groups:
                 for group in self.group_field_groups:
                     if not re.match("^[\w]*$", group.group_name.value) or group.group_name.value == '':
-                        raise cps.ValidationError(warning_string % "group name", group.group_name)
+                        raise cellprofiler.setting.ValidationError(warning_string % "group name", group.group_name)
 
             if self.properties_wants_filters:
                 for group in self.filter_field_groups:
                     if not re.match("^[\w]*$", group.filter_name.value) or group.filter_name.value == '':
-                        raise cps.ValidationError(warning_string % "filter name", group.filter_name)
+                        raise cellprofiler.setting.ValidationError(warning_string % "filter name", group.filter_name)
                     if not re.match("^[\w\s\"\'=]*$",
                                     group.filter_statement.value) or group.filter_statement.value == '':
-                        raise cps.ValidationError(warning_string % "filter statement", group.filter_statement)
+                        raise cellprofiler.setting.ValidationError(warning_string % "filter statement", group.filter_statement)
 
             if self.properties_class_table_name:
                 if not re.match("^[\w]*$", self.properties_class_table_name.value):
-                    raise cps.ValidationError(warning_string % "class table name", self.properties_class_table_name)
+                    raise cellprofiler.setting.ValidationError(warning_string % "class table name", self.properties_class_table_name)
 
         '''Warn user re: objects that are not 1:1 (i.e., primary/secondary/tertiary) if creating a view'''
         if self.objects_choice != O_NONE and self.separate_object_tables in (OT_VIEW, OT_COMBINE):
             if self.objects_choice == O_SELECT:
                 selected_objs = self.objects_list.value.rsplit(',')
             elif self.objects_choice == O_ALL:
-                selected_objs = pipeline.get_provider_dictionary(cps.OBJECT_GROUP).keys()
+                selected_objs = pipeline.get_provider_dictionary(cellprofiler.setting.OBJECT_GROUP).keys()
 
             if len(selected_objs) > 1:
                 # Check whether each selected object comes from an Identify module. If it does, look for its parent.
@@ -1524,7 +1820,7 @@ class ExportToDatabase(cpm.Module):
                 for obj in selected_objs:
                     for module in pipeline.modules():
                         if module.is_object_identification_module():  # and module.get_measurements(pipeline,obj,C_PARENT):
-                            parent = module.get_measurements(pipeline, obj, C_PARENT)
+                            parent = module.get_measurements(pipeline, obj, identify.C_PARENT)
                             if len(parent) > 0:
                                 d[obj] = parent[0]
                 # For objects with no parents (primary), use the object itself
@@ -1541,7 +1837,7 @@ class ExportToDatabase(cpm.Module):
                             mismatched_objs)
                     msg += "You may want to choose another object container"
                     msg += "." if self.objects_choice == O_ALL else " or de-select the object(s)."
-                    raise cps.ValidationError(msg, self.separate_object_tables)
+                    raise cellprofiler.setting.ValidationError(msg, self.separate_object_tables)
 
     def test_connection(self):
         '''Check to make sure the MySQL server is remotely accessible'''
@@ -1621,15 +1917,15 @@ class ExportToDatabase(cpm.Module):
             #
             self.get_pipeline_measurement_columns(pipeline, image_set_list)
 
-            if pipeline.in_batch_mode() or not cpprefs.get_allow_schema_write():
+            if pipeline.in_batch_mode() or not cellprofiler.preferences.get_allow_schema_write():
                 return True
             if self.db_type == DB_ORACLE:
                 raise NotImplementedError("Writing to an Oracle database is not yet supported")
             if self.db_type in (DB_MYSQL, DB_SQLITE):
-                tables = [self.get_table_name(cpmeas.IMAGE)]
+                tables = [self.get_table_name(cellprofiler.measurement.IMAGE)]
                 if self.objects_choice != O_NONE:
                     if self.separate_object_tables == OT_COMBINE:
-                        tables.append(self.get_table_name(cpmeas.OBJECT))
+                        tables.append(self.get_table_name(cellprofiler.measurement.OBJECT))
                     else:
                         for object_name in self.get_object_names(pipeline, image_set_list):
                             tables.append(self.get_table_name(object_name))
@@ -1648,7 +1944,7 @@ class ExportToDatabase(cpm.Module):
                         table_msg = "%s and %s tables" % (
                             ", ".join(tables_that_exist[:-1]),
                             tables_that_exist[-1])
-                    if cpprefs.get_headless():
+                    if cellprofiler.preferences.get_headless():
                         if self.allow_overwrite == OVERWRITE_NEVER:
                             logger.error("%s already in database and overwrite not allowed. Exiting" % table_msg)
                             return False
@@ -1678,7 +1974,7 @@ class ExportToDatabase(cpm.Module):
                 column_defs = self.get_pipeline_measurement_columns(pipeline,
                                                                     image_set_list)
                 if self.objects_choice != O_ALL:
-                    onames = [cpmeas.EXPERIMENT, cpmeas.IMAGE, cpmeas.NEIGHBORS]
+                    onames = [cellprofiler.measurement.EXPERIMENT, cellprofiler.measurement.IMAGE, cellprofiler.measurement.NEIGHBORS]
                     if self.objects_choice == O_SELECT:
                         onames += self.objects_list.selections
                     column_defs = [column for column in column_defs
@@ -1702,8 +1998,8 @@ class ExportToDatabase(cpm.Module):
         if self.want_image_thumbnails:
             cols = []
             for name in self.thumbnail_image_names.get_selections():
-                cols += [(cpmeas.IMAGE, C_THUMBNAIL + "_" + name,
-                          cpmeas.COLTYPE_LONGBLOB)]
+                cols += [(cellprofiler.measurement.IMAGE, C_THUMBNAIL + "_" + name,
+                          cellprofiler.measurement.COLTYPE_LONGBLOB)]
             return cols
         return []
 
@@ -1718,13 +2014,13 @@ class ExportToDatabase(cpm.Module):
         # have to hack our measurement column cache to circumvent this.
         #
         m = workspace.measurements
-        assert isinstance(m, cpmeas.Measurements)
+        assert isinstance(m, cellprofiler.measurement.Measurements)
         d = self.get_dictionary()
         columns = m.get_measurement_columns()
         for i, (object_name, feature_name, coltype) in enumerate(columns):
-            if (object_name == cpmeas.IMAGE and
+            if (object_name == cellprofiler.measurement.IMAGE and
                     feature_name.startswith(C_THUMBNAIL)):
-                columns[i] = (object_name, feature_name, cpmeas.COLTYPE_LONGBLOB)
+                columns[i] = (object_name, feature_name, cellprofiler.measurement.COLTYPE_LONGBLOB)
         columns = self.filter_measurement_columns(columns)
         d[D_MEASUREMENT_COLUMNS] = columns
 
@@ -1756,7 +2052,7 @@ class ExportToDatabase(cpm.Module):
                 # as measurement to be written as a blob.
                 pixels = image_set.get_image(name).pixel_data
 
-                if issubclass(pixels.dtype.type, np.floating) or pixels.dtype == np.bool:
+                if issubclass(pixels.dtype.type, numpy.floating) or pixels.dtype == numpy.bool:
                     factor = 255
                     if self.auto_scale_thumbnail_intensities:
                         pixels = (pixels - pixels.min()) / pixels.max()
@@ -1991,11 +2287,11 @@ class ExportToDatabase(cpm.Module):
             # Process the image numbers in the current image's group
             #
             m = workspace.measurements
-            assert isinstance(m, cpmeas.Measurements)
-            group_number = m[cpmeas.IMAGE, cpmeas.GROUP_NUMBER,
+            assert isinstance(m, cellprofiler.measurement.Measurements)
+            group_number = m[cellprofiler.measurement.IMAGE, cellprofiler.measurement.GROUP_NUMBER,
                              m.image_set_number]
             all_image_numbers = m.get_image_numbers()
-            all_group_numbers = m[cpmeas.IMAGE, cpmeas.GROUP_NUMBER,
+            all_group_numbers = m[cellprofiler.measurement.IMAGE, cellprofiler.measurement.GROUP_NUMBER,
                                   all_image_numbers]
             group_image_numbers = \
                 all_image_numbers[all_group_numbers == group_number]
@@ -2058,12 +2354,12 @@ class ExportToDatabase(cpm.Module):
 
         If strict is True, then we ignore objects based on the object selection
         """
-        if object_name in (cpmeas.EXPERIMENT, cpmeas.NEIGHBORS):
+        if object_name in (cellprofiler.measurement.EXPERIMENT, cellprofiler.measurement.NEIGHBORS):
             return True
         if strict and self.objects_choice == O_NONE:
             return True
         if (strict and self.objects_choice == O_SELECT and
-                    object_name != cpmeas.IMAGE):
+                    object_name != cellprofiler.measurement.IMAGE):
             return object_name not in self.objects_list.selections
         return False
 
@@ -2092,7 +2388,7 @@ class ExportToDatabase(cpm.Module):
             if self.ignore_feature(object_name, feature_name):
                 continue
             mappings.add("%s_%s" % (object_name, feature_name))
-            if object_name != cpmeas.IMAGE:
+            if object_name != cellprofiler.measurement.IMAGE:
                 for agg_name in self.agg_names:
                     mappings.add('%s_%s_%s' % (agg_name, object_name, feature_name))
         return mappings
@@ -2125,7 +2421,7 @@ class ExportToDatabase(cpm.Module):
                 obname, feature, ftype = column[:3]
                 if (obname == ob_table and
                         (not self.ignore_feature(obname, feature)) and
-                        (not cpmeas.agg_ignore_feature(feature))):
+                        (not cellprofiler.measurement.agg_ignore_feature(feature))):
                     feature_name = '%s_%s' % (obname, feature)
                     # create per_image aggregate column defs
                     result += [(obname, feature, aggname,
@@ -2144,17 +2440,17 @@ class ExportToDatabase(cpm.Module):
         obnames = sorted(obnames)
         return [obname for obname in obnames
                 if not self.ignore_object(obname, True) and
-                obname not in (cpmeas.IMAGE, cpmeas.EXPERIMENT,
-                               cpmeas.NEIGHBORS)]
+                obname not in (cellprofiler.measurement.IMAGE, cellprofiler.measurement.EXPERIMENT,
+                               cellprofiler.measurement.NEIGHBORS)]
 
     @property
     def agg_names(self):
         '''The list of selected aggregate names'''
         return [name
                 for name, setting
-                in ((cpmeas.AGG_MEAN, self.wants_agg_mean),
-                    (cpmeas.AGG_MEDIAN, self.wants_agg_median),
-                    (cpmeas.AGG_STD_DEV, self.wants_agg_std_dev))
+                in ((cellprofiler.measurement.AGG_MEAN, self.wants_agg_mean),
+                    (cellprofiler.measurement.AGG_MEDIAN, self.wants_agg_median),
+                    (cellprofiler.measurement.AGG_STD_DEV, self.wants_agg_std_dev))
                 if setting.value]
 
     @property
@@ -2198,17 +2494,17 @@ class ExportToDatabase(cpm.Module):
         #
         # Drop either the unified objects table or the view of it
         #
-        object_table_name = self.get_table_name(cpmeas.OBJECT)
+        object_table_name = self.get_table_name(cellprofiler.measurement.OBJECT)
         try:
             execute(cursor, 'DROP TABLE IF EXISTS %s' %
-                    self.get_table_name(cpmeas.OBJECT),
+                    self.get_table_name(cellprofiler.measurement.OBJECT),
                     return_result=False)
         except:
             # MySQL is fine if the table is a view, but not SQLite
             pass
         try:
             execute(cursor, 'DROP VIEW IF EXISTS %s' %
-                    self.get_table_name(cpmeas.OBJECT),
+                    self.get_table_name(cellprofiler.measurement.OBJECT),
                     return_result=False)
         except:
             pass
@@ -2235,13 +2531,13 @@ class ExportToDatabase(cpm.Module):
 
         # Image table
         execute(cursor, 'DROP TABLE IF EXISTS %s' %
-                self.get_table_name(cpmeas.IMAGE), return_result=False)
+                self.get_table_name(cellprofiler.measurement.IMAGE), return_result=False)
         statement = self.get_create_image_table_statement(pipeline,
                                                           image_set_list)
         execute(cursor, statement, return_result=False)
 
         execute(cursor, 'DROP TABLE IF EXISTS %s' %
-                self.get_table_name(cpmeas.EXPERIMENT))
+                self.get_table_name(cellprofiler.measurement.EXPERIMENT))
         for statement in self.get_experiment_table_statements(workspace):
             execute(cursor, statement, return_result=False)
         if self.wants_relationship_table:
@@ -2300,16 +2596,16 @@ SELECT MAX(experiment_id), '%s', '%s', '%s' FROM %s""" % (
                 statements.append(statement)
 
         experiment_columns = filter(
-                lambda x: x[0] == cpmeas.EXPERIMENT,
+                lambda x: x[0] == cellprofiler.measurement.EXPERIMENT,
                 workspace.pipeline.get_measurement_columns())
         experiment_coldefs = [
             "%s %s" % (x[1],
-                       "TEXT" if x[2].startswith(cpmeas.COLTYPE_VARCHAR)
+                       "TEXT" if x[2].startswith(cellprofiler.measurement.COLTYPE_VARCHAR)
                        else x[2]) for x in experiment_columns]
         create_per_experiment = """
 CREATE TABLE %s (
 %s)
-""" % (self.get_table_name(cpmeas.EXPERIMENT),
+""" % (self.get_table_name(cellprofiler.measurement.EXPERIMENT),
        ",\n".join(experiment_coldefs))
         statements.append(create_per_experiment)
         column_names = []
@@ -2318,13 +2614,13 @@ CREATE TABLE %s (
             ftr = column[1]
             column_names.append(ftr)
             if ((len(column) > 3 and
-                     column[3].get(cpmeas.MCA_AVAILABLE_POST_RUN, False)) or
-                    not workspace.measurements.has_feature(cpmeas.EXPERIMENT, ftr)):
+                     column[3].get(cellprofiler.measurement.MCA_AVAILABLE_POST_RUN, False)) or
+                    not workspace.measurements.has_feature(cellprofiler.measurement.EXPERIMENT, ftr)):
                 values.append("null")
                 continue
             value = workspace.measurements.get_experiment_measurement(ftr)
 
-            if column[2].startswith(cpmeas.COLTYPE_VARCHAR):
+            if column[2].startswith(cellprofiler.measurement.COLTYPE_VARCHAR):
                 if isinstance(value, unicode):
                     value = value.encode('utf-8')
                 if self.db_type != DB_SQLITE:
@@ -2339,7 +2635,7 @@ CREATE TABLE %s (
                 value = "X'" + "".join(["%02X" % ord(x) for x in value]) + "'"
             values.append(value)
         experiment_insert_statement = "INSERT INTO %s (%s) VALUES (%s)" % (
-            self.get_table_name(cpmeas.EXPERIMENT),
+            self.get_table_name(cellprofiler.measurement.EXPERIMENT),
             ",".join(column_names),
             ",".join(values))
         statements.append(experiment_insert_statement)
@@ -2347,7 +2643,7 @@ CREATE TABLE %s (
 
     def get_create_image_table_statement(self, pipeline, image_set_list):
         '''Return a SQL statement that generates the image table'''
-        statement = 'CREATE TABLE ' + self.get_table_name(cpmeas.IMAGE) + ' (\n'
+        statement = 'CREATE TABLE ' + self.get_table_name(cellprofiler.measurement.IMAGE) + ' (\n'
         statement += '%s INTEGER' % C_IMAGE_NUMBER
 
         mappings = self.get_column_name_mappings(pipeline, image_set_list)
@@ -2355,14 +2651,14 @@ CREATE TABLE %s (
                 pipeline, image_set_list)
         for column in columns:
             obname, feature, ftype = column[:3]
-            if obname == cpmeas.IMAGE and not self.ignore_feature(obname, feature):
-                if ftype.startswith(cpmeas.COLTYPE_VARCHAR):
+            if obname == cellprofiler.measurement.IMAGE and not self.ignore_feature(obname, feature):
+                if ftype.startswith(cellprofiler.measurement.COLTYPE_VARCHAR):
                     ftype = "TEXT"
                 feature_name = '%s_%s' % (obname, feature)
                 statement += ',\n%s %s' % (mappings[feature_name], ftype)
         for column in self.get_aggregate_columns(pipeline, image_set_list):
             statement += ',\n%s %s' % (mappings[column[3]],
-                                       cpmeas.COLTYPE_FLOAT)
+                                       cellprofiler.measurement.COLTYPE_FLOAT)
         statement += ',\nPRIMARY KEY (%s) )' % C_IMAGE_NUMBER
         return statement
 
@@ -2373,7 +2669,7 @@ CREATE TABLE %s (
         object_name - None = PerObject, otherwise a specific table
         '''
         if object_name is None:
-            object_table = self.get_table_name(cpmeas.OBJECT)
+            object_table = self.get_table_name(cellprofiler.measurement.OBJECT)
         else:
             object_table = self.get_table_name(object_name)
         statement = 'CREATE TABLE ' + object_table + ' (\n'
@@ -2382,7 +2678,7 @@ CREATE TABLE %s (
             statement += ',%s INTEGER' % C_OBJECT_NUMBER
             object_pk = C_OBJECT_NUMBER
         else:
-            object_pk = "_".join((object_name, M_NUMBER_OBJECT_NUMBER))
+            object_pk = "_".join((object_name, identify.M_NUMBER_OBJECT_NUMBER))
         column_defs = self.get_pipeline_measurement_columns(pipeline,
                                                             image_set_list)
         mappings = self.get_column_name_mappings(pipeline, image_set_list)
@@ -2405,7 +2701,7 @@ CREATE TABLE %s (
 
         object_names is the list of objects to be included into the view
         '''
-        object_table = self.get_table_name(cpmeas.OBJECT)
+        object_table = self.get_table_name(cellprofiler.measurement.OBJECT)
 
         # Produce a list of columns from each of the separate tables
         list_of_columns = []
@@ -2424,7 +2720,7 @@ CREATE TABLE %s (
 
         selected_object = object_names[0]
         all_columns = ["%s.%s" % (all_objects[selected_object], C_IMAGE_NUMBER),
-                       "%s_%s AS %s" % (selected_object, M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER)] + all_columns
+                       "%s_%s AS %s" % (selected_object, identify.M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER)] + all_columns
 
         # Create the new view
         statement = "CREATE OR REPLACE VIEW " if self.db_type == DB_MYSQL else "CREATE VIEW "
@@ -2438,8 +2734,8 @@ CREATE TABLE %s (
                                       all_objects[selected_object], C_IMAGE_NUMBER, current_table, C_IMAGE_NUMBER),
                                                 "%s.%s_%s = %s.%s_%s" % (
                                                     all_objects[selected_object], selected_object,
-                                                    M_NUMBER_OBJECT_NUMBER,
-                                                    current_table, current_object, M_NUMBER_OBJECT_NUMBER)))))
+                                                    identify.M_NUMBER_OBJECT_NUMBER,
+                                                    current_table, current_object, identify.M_NUMBER_OBJECT_NUMBER)))))
         return statement
 
     def get_create_relationships_table_statements(self, pipeline):
@@ -2625,7 +2921,7 @@ CREATE TABLE %s (
         #
         if self.objects_choice != O_NONE:
             if self.separate_object_tables == OT_COMBINE:
-                data = [(None, cpmeas.OBJECT)]
+                data = [(None, cellprofiler.measurement.OBJECT)]
             else:
                 data = [(x, x) for x in self.get_object_names(
                         pipeline, image_set_list)]
@@ -2642,7 +2938,7 @@ LOAD DATA LOCAL INFILE '%s_%s.CSV' REPLACE INTO TABLE %s
 FIELDS TERMINATED BY ','
 OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
 """ %
-                  (self.base_name(workspace), cpmeas.IMAGE, self.get_table_name(cpmeas.IMAGE)))
+                  (self.base_name(workspace), cellprofiler.measurement.IMAGE, self.get_table_name(cellprofiler.measurement.IMAGE)))
 
         for gcot_name, object_name in data:
             fid.write("""
@@ -2700,8 +2996,8 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 if do_write:
                     fid.write("CREATE TABLE %sPer_Well_%s AS SELECT " %
                               (self.get_table_prefix(), aggname))
-                for i, object_name in enumerate(object_names + [cpmeas.IMAGE]):
-                    if object_name == cpmeas.IMAGE:
+                for i, object_name in enumerate(object_names + [cellprofiler.measurement.IMAGE]):
+                    if object_name == cellprofiler.measurement.IMAGE:
                         object_table_name = "IT"
                     elif self.separate_object_tables == OT_COMBINE:
                         object_table_name = "OT"
@@ -2716,7 +3012,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                         #
                         # Don't take an aggregate on a string column
                         #
-                        if data_type.startswith(cpmeas.COLTYPE_VARCHAR):
+                        if data_type.startswith(cellprofiler.measurement.COLTYPE_VARCHAR):
                             continue
                         feature_name = "%s_%s" % (object_name, feature)
                         colname = mappings[feature_name]
@@ -2733,7 +3029,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 pass
             elif self.separate_object_tables == OT_COMBINE:
                 fid.write("JOIN %s OT ON IT.%s = OT.%s\n" %
-                          (self.get_table_name(cpmeas.OBJECT), C_IMAGE_NUMBER, C_IMAGE_NUMBER))
+                          (self.get_table_name(cellprofiler.measurement.OBJECT), C_IMAGE_NUMBER, C_IMAGE_NUMBER))
             elif len(object_names) == 1:
                 fid.write("JOIN %s OT1 ON IT.%s = OT1.%s\n" %
                           (self.get_table_name(object_names[0]), C_IMAGE_NUMBER, C_IMAGE_NUMBER))
@@ -2747,12 +3043,12 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 fid.write(
                         "RIGHT JOIN (SELECT DISTINCT %s, %s FROM\n" % (C_IMAGE_NUMBER, C_OBJECT_NUMBER))
                 fid.write("(SELECT %s, %s_%s as %s FROM %s\n" %
-                          (C_IMAGE_NUMBER, object_names[0], M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER,
+                          (C_IMAGE_NUMBER, object_names[0], identify.M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER,
                            self.get_table_name(object_names[0])))
                 for object_name in object_names[1:]:
                     fid.write("UNION SELECT %s, %s_%s as %s "
                               "FROM %s\n" %
-                              (C_IMAGE_NUMBER, object_name, M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER,
+                              (C_IMAGE_NUMBER, object_name, identify.M_NUMBER_OBJECT_NUMBER, C_OBJECT_NUMBER,
                                self.get_table_name(object_name)))
                 fid.write(") N_INNER) N ON IT.%s = N.%s\n" % (C_IMAGE_NUMBER, C_IMAGE_NUMBER))
                 for i, object_name in enumerate(object_names):
@@ -2760,7 +3056,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                               (self.get_table_name(object_name), i + 1))
                     fid.write("ON N.%s = OT%d.%s " % (C_IMAGE_NUMBER, i + 1, C_IMAGE_NUMBER))
                     fid.write("AND N.%s = OT%d.%s_%s\n" %
-                              (C_OBJECT_NUMBER, i + 1, object_name, M_NUMBER_OBJECT_NUMBER))
+                              (C_OBJECT_NUMBER, i + 1, object_name, identify.M_NUMBER_OBJECT_NUMBER))
             fid.write("GROUP BY IT.Image_Metadata_Plate, "
                       "IT.Image_Metadata_Well;\n\n""")
 
@@ -2789,7 +3085,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
         measurements = workspace.measurements
         pipeline = workspace.pipeline
         image_set_list = workspace.image_set_list
-        image_filename = self.make_full_filename('%s_%s.CSV' % (self.base_name(workspace), cpmeas.IMAGE), workspace)
+        image_filename = self.make_full_filename('%s_%s.CSV' % (self.base_name(workspace), cellprofiler.measurement.IMAGE), workspace)
         fid_per_image = open(image_filename, "wb")
         columns = self.get_pipeline_measurement_columns(pipeline,
                                                         image_set_list, remove_postgroup_key=True)
@@ -2798,26 +3094,26 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             image_row = []
             image_row.append(image_number)
             for object_name, feature, coltype in columns:
-                if object_name != cpmeas.IMAGE:
+                if object_name != cellprofiler.measurement.IMAGE:
                     continue
                 if self.ignore_feature(object_name, feature, measurements):
                     continue
                 feature_name = "%s_%s" % (object_name, feature)
-                if not measurements.has_feature(cpmeas.IMAGE, feature):
-                    value = np.NaN
+                if not measurements.has_feature(cellprofiler.measurement.IMAGE, feature):
+                    value = numpy.NaN
                 else:
                     value = measurements.get_measurement(
-                            cpmeas.IMAGE, feature, image_number)
-                if isinstance(value, np.ndarray):
+                            cellprofiler.measurement.IMAGE, feature, image_number)
+                if isinstance(value, numpy.ndarray):
                     value = value[0]
-                if coltype.startswith(cpmeas.COLTYPE_VARCHAR):
+                if coltype.startswith(cellprofiler.measurement.COLTYPE_VARCHAR):
                     if isinstance(value, str) or isinstance(value, unicode):
                         value = '"' + MySQLdb.escape_string(value) + '"'
                     elif value is None:
                         value = "NULL"
                     else:
                         value = '"' + MySQLdb.escape_string(value) + '"'
-                elif np.isnan(value) or np.isinf(value):
+                elif numpy.isnan(value) or numpy.isinf(value):
                     value = "NULL"
 
                 image_row.append(value)
@@ -2837,7 +3133,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             return
 
         if self.separate_object_tables == OT_COMBINE:
-            data = [(cpmeas.OBJECT, object_names)]
+            data = [(cellprofiler.measurement.OBJECT, object_names)]
         else:
             data = [(object_name, [object_name])
                     for object_name in object_names]
@@ -2851,12 +3147,12 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 max_count = 0
                 for object_name in object_list:
                     count = measurements.get_measurement(
-                            cpmeas.IMAGE, "Count_%s" % object_name, image_number)
+                            cellprofiler.measurement.IMAGE, "Count_%s" % object_name, image_number)
                     max_count = max(max_count, int(count))
                 d = {}
                 for j in range(max_count):
                     object_row = [image_number]
-                    if file_object_name == cpmeas.OBJECT:
+                    if file_object_name == cellprofiler.measurement.OBJECT:
                         # the object number
                         object_row.append(j + 1)
                     #
@@ -2877,7 +3173,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                             else:
                                 values = d[key]
                             if (values is None or len(values) <= j or
-                                    np.isnan(values[j]) or np.isinf(values[j])):
+                                    numpy.isnan(values[j]) or numpy.isinf(values[j])):
                                 value = "NULL"
                             else:
                                 value = values[j]
@@ -2928,9 +3224,9 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             return not post_group
         if not hasattr(column[3], "has_key"):
             return not post_group
-        if not column[3].has_key(cpmeas.MCA_AVAILABLE_POST_GROUP):
+        if not column[3].has_key(cellprofiler.measurement.MCA_AVAILABLE_POST_GROUP):
             return not post_group
-        return (post_group if column[3][cpmeas.MCA_AVAILABLE_POST_GROUP]
+        return (post_group if column[3][cellprofiler.measurement.MCA_AVAILABLE_POST_GROUP]
                 else not post_group)
 
     def write_data_to_db(self, workspace,
@@ -2947,7 +3243,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
         try:
             zeros_for_nan = False
             measurements = workspace.measurements
-            assert isinstance(measurements, cpmeas.Measurements)
+            assert isinstance(measurements, cellprofiler.measurement.Measurements)
             pipeline = workspace.pipeline
             image_set_list = workspace.image_set_list
             measurement_cols = self.get_pipeline_measurement_columns(pipeline,
@@ -2965,8 +3261,8 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             # the experiment table
             ###########################################
             stmt = "UPDATE %s SET %s='%s'" % \
-                   (self.get_table_name(cpmeas.EXPERIMENT),
-                    M_MODIFICATION_TIMESTAMP,
+                   (self.get_table_name(cellprofiler.measurement.EXPERIMENT),
+                    cellprofiler.pipeline.M_MODIFICATION_TIMESTAMP,
                     datetime.datetime.now().isoformat())
             execute(self.cursor, stmt, return_result=False)
             ###########################################
@@ -2979,10 +3275,10 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
 
             image_row = []
             if not post_group:
-                image_row += [(image_number, cpmeas.COLTYPE_INTEGER, C_IMAGE_NUMBER)]
-            feature_names = set(measurements.get_feature_names(cpmeas.IMAGE))
+                image_row += [(image_number, cellprofiler.measurement.COLTYPE_INTEGER, C_IMAGE_NUMBER)]
+            feature_names = set(measurements.get_feature_names(cellprofiler.measurement.IMAGE))
             for m_col in measurement_cols:
-                if m_col[0] != cpmeas.IMAGE:
+                if m_col[0] != cellprofiler.measurement.IMAGE:
                     continue
                 if not self.should_write(m_col, post_group):
                     continue
@@ -2993,12 +3289,12 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 #
                 if m_col[1] not in feature_names:
                     continue
-                feature_name = "%s_%s" % (cpmeas.IMAGE, m_col[1])
+                feature_name = "%s_%s" % (cellprofiler.measurement.IMAGE, m_col[1])
                 value = measurements.get_measurement(
-                        cpmeas.IMAGE, m_col[1], image_number)
-                if isinstance(value, np.ndarray):
+                        cellprofiler.measurement.IMAGE, m_col[1], image_number)
+                if isinstance(value, numpy.ndarray):
                     value = value[0]
-                if isinstance(value, float) and not np.isfinite(value) and zeros_for_nan:
+                if isinstance(value, float) and not numpy.isfinite(value) and zeros_for_nan:
                     value = 0
                 image_row.append((value, m_col[2], feature_name))
             #
@@ -3009,7 +3305,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             agg_columns = self.get_aggregate_columns(pipeline, image_set_list,
                                                      post_group)
             image_row += [(agg_dict[agg[3]],
-                           cpmeas.COLTYPE_FLOAT,
+                           cellprofiler.measurement.COLTYPE_FLOAT,
                            agg[3])
                           for agg in agg_columns]
 
@@ -3020,7 +3316,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             #
             if not post_group:
                 stmt = ('DELETE FROM %s WHERE %s=%d' %
-                        (self.get_table_name(cpmeas.IMAGE),
+                        (self.get_table_name(cellprofiler.measurement.IMAGE),
                          C_IMAGE_NUMBER,
                          image_number))
                 execute(self.cursor, stmt, return_result=False)
@@ -3042,7 +3338,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             object_names = self.get_object_names(pipeline, image_set_list)
             if len(object_names) > 0:
                 if self.separate_object_tables == OT_COMBINE:
-                    data = [(cpmeas.OBJECT, object_names)]
+                    data = [(cellprofiler.measurement.OBJECT, object_names)]
                 else:
                     data = [(object_name, [object_name])
                             for object_name in object_names]
@@ -3057,7 +3353,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                     for object_name in object_list:
                         ftr_count = "Count_%s" % object_name
                         count = measurements.get_measurement(
-                                cpmeas.IMAGE, ftr_count, image_number)
+                                cellprofiler.measurement.IMAGE, ftr_count, image_number)
                         max_count = max(max_count, int(count))
                     column_values = []
                     for column in columns:
@@ -3068,22 +3364,22 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                         if len(values) < max_count:
                             values = list(values) + [None] * (max_count - len(values))
                         values = [
-                            None if v is None or np.isnan(v) or np.isinf(v)
+                            None if v is None or numpy.isnan(v) or numpy.isinf(v)
                             else str(v)
                             for v in values]
                         column_values.append(values)
                     object_cols = []
                     if not post_group:
                         object_cols += [C_IMAGE_NUMBER]
-                    if table_object_name == cpmeas.OBJECT:
+                    if table_object_name == cellprofiler.measurement.OBJECT:
                         object_number_column = C_OBJECT_NUMBER
                         if not post_group:
                             object_cols += [object_number_column]
-                        object_numbers = np.arange(1, max_count + 1)
+                        object_numbers = numpy.arange(1, max_count + 1)
                     else:
-                        object_number_column = "_".join((object_name, M_NUMBER_OBJECT_NUMBER))
+                        object_number_column = "_".join((object_name, identify.M_NUMBER_OBJECT_NUMBER))
                         object_numbers = measurements.get_measurement(
-                                object_name, M_NUMBER_OBJECT_NUMBER, image_number)
+                                object_name, identify.M_NUMBER_OBJECT_NUMBER, image_number)
 
                     object_cols += [mapping["%s_%s" % (column[0], column[1])]
                                     for column in columns]
@@ -3091,7 +3387,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                     for j in range(max_count):
                         if not post_group:
                             object_row = [image_number]
-                            if table_object_name == cpmeas.OBJECT:
+                            if table_object_name == cellprofiler.measurement.OBJECT:
                                 # the object number
                                 object_row.append(object_numbers[j])
                         else:
@@ -3143,17 +3439,17 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                                     (table_name,
                                      self.truncate_string_for_display(row_stmt)))
 
-            image_table = self.get_table_name(cpmeas.IMAGE)
+            image_table = self.get_table_name(cellprofiler.measurement.IMAGE)
             replacement = '%s' if self.db_type == DB_MYSQL else "?"
             image_row_values = [
                 None if field[0] is None
-                else None if ((field[1] == cpmeas.COLTYPE_FLOAT) and
-                              (np.isnan(field[0]) or np.isinf(field[0])))
-                else float(field[0]) if (field[1] == cpmeas.COLTYPE_FLOAT)
-                else int(field[0]) if (field[1] == cpmeas.COLTYPE_INTEGER)
+                else None if ((field[1] == cellprofiler.measurement.COLTYPE_FLOAT) and
+                              (numpy.isnan(field[0]) or numpy.isinf(field[0])))
+                else float(field[0]) if (field[1] == cellprofiler.measurement.COLTYPE_FLOAT)
+                else int(field[0]) if (field[1] == cellprofiler.measurement.COLTYPE_INTEGER)
                 else buffer(field[0])
-                if field[1] in (cpmeas.COLTYPE_BLOB, cpmeas.COLTYPE_LONGBLOB,
-                                cpmeas.COLTYPE_MEDIUMBLOB)
+                if field[1] in (cellprofiler.measurement.COLTYPE_BLOB, cellprofiler.measurement.COLTYPE_LONGBLOB,
+                                cellprofiler.measurement.COLTYPE_MEDIUMBLOB)
                 else field[0] for field in image_row]
             if len(image_row) > 0:
                 if not post_group:
@@ -3195,7 +3491,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                     stmt += "VALUES (%s, %s, %s, %s, %s)"
                 for module_num, relationship, object_name1, object_name2, when \
                         in pipeline.get_object_relationships():
-                    if post_group != (when == cpmeas.MCA_AVAILABLE_POST_GROUP):
+                    if post_group != (when == cellprofiler.measurement.MCA_AVAILABLE_POST_GROUP):
                         continue
                     r = measurements.get_relationships(
                             module_num, relationship, object_name1, object_name2,
@@ -3261,15 +3557,15 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
         columns = workspace.pipeline.get_measurement_columns()
         columns = filter(
                 (lambda c:
-                 c[0] == cpmeas.EXPERIMENT and len(c) > 3 and
-                 c[3].get(cpmeas.MCA_AVAILABLE_POST_RUN, False)), columns)
+                 c[0] == cellprofiler.measurement.EXPERIMENT and len(c) > 3 and
+                 c[3].get(cellprofiler.measurement.MCA_AVAILABLE_POST_RUN, False)), columns)
         if len(columns) > 0:
-            statement = "UPDATE %s SET " % self.get_table_name(cpmeas.EXPERIMENT)
+            statement = "UPDATE %s SET " % self.get_table_name(cellprofiler.measurement.EXPERIMENT)
             assignments = []
             for column in columns:
                 if workspace.measurements.has_feature(
-                        cpmeas.EXPERIMENT, column[1]):
-                    value = workspace.measurements[cpmeas.EXPERIMENT, column[1]]
+                        cellprofiler.measurement.EXPERIMENT, column[1]):
+                    value = workspace.measurements[cellprofiler.measurement.EXPERIMENT, column[1]]
                     if value is not None:
                         assignments.append("%s='%s'" % (column[1], value))
             if len(assignments) > 0:
@@ -3332,7 +3628,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                     object_names = [
                         object_name
                         for object_name in workspace.measurements.get_object_names()
-                        if (object_name != cpmeas.IMAGE) and
+                        if (object_name != cellprofiler.measurement.IMAGE) and
                         (not self.ignore_object(object_name))]
             elif self.separate_object_tables == OT_VIEW:
                 object_names = [None]
@@ -3343,9 +3639,9 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
         # Find all images that have FileName and PathName
         image_features = [
             c[1] for c in workspace.pipeline.get_measurement_columns()
-            if c[0] == cpmeas.IMAGE]
+            if c[0] == cellprofiler.measurement.IMAGE]
         for feature in image_features:
-            match = re.match('^%s_(.+)$' % C_FILE_NAME, feature)
+            match = re.match('^%s_(.+)$' % cellprofiler.modules.loadimages.C_FILE_NAME, feature)
             if match:
                 default_image_names.append(match.groups()[0])
 
@@ -3437,15 +3733,15 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
             file_name = self.make_full_filename(filename, workspace)
             unique_id = C_IMAGE_NUMBER
             image_thumbnail_cols = ','.join(
-                    ['%s_%s_%s' % (cpmeas.IMAGE, C_THUMBNAIL, name)
+                    ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, C_THUMBNAIL, name)
                      for name in self.thumbnail_image_names.get_selections()]) \
                 if self.want_image_thumbnails else ''
 
             if self.properties_export_all_image_defaults:
                 image_file_cols = ','.join(
-                        ['%s_%s_%s' % (cpmeas.IMAGE, C_FILE_NAME, name) for name in default_image_names])
+                        ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, cellprofiler.modules.loadimages.C_FILE_NAME, name) for name in default_image_names])
                 image_path_cols = ','.join(
-                        ['%s_%s_%s' % (cpmeas.IMAGE, C_PATH_NAME, name) for name in default_image_names])
+                        ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, cellprofiler.modules.loadimages.C_PATH_NAME, name) for name in default_image_names])
 
                 # Provide default colors
                 if len(default_image_names) == 1:
@@ -3465,7 +3761,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                                                                                                        if
                                                                                                        name not in default_image_names]
                     image_thumbnail_cols = ','.join(
-                            ['%s_%s_%s' % (cpmeas.IMAGE, C_THUMBNAIL, name)
+                            ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, C_THUMBNAIL, name)
                              for name in thumb_names])
                 else:
                     image_thumbnail_cols = ''
@@ -3484,9 +3780,9 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                     image_channel_colors += [group.image_channel_colors.value]
 
                 image_file_cols = ','.join(
-                        ['%s_%s_%s' % (cpmeas.IMAGE, C_FILE_NAME, name) for name in selected_image_names])
+                        ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, cellprofiler.modules.loadimages.C_FILE_NAME, name) for name in selected_image_names])
                 image_path_cols = ','.join(
-                        ['%s_%s_%s' % (cpmeas.IMAGE, C_PATH_NAME, name) for name in selected_image_names])
+                        ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, cellprofiler.modules.loadimages.C_PATH_NAME, name) for name in selected_image_names])
 
                 # Try to match thumbnail order to selected image order
                 if self.want_image_thumbnails:
@@ -3496,7 +3792,7 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                                                                                                         if
                                                                                                         name not in selected_image_names]
                     image_thumbnail_cols = ','.join(
-                            ['%s_%s_%s' % (cpmeas.IMAGE, C_THUMBNAIL, name)
+                            ['%s_%s_%s' % (cellprofiler.measurement.IMAGE, C_THUMBNAIL, name)
                              for name in thumb_names])
                 else:
                     image_thumbnail_cols = ''
@@ -3535,9 +3831,9 @@ OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\\\';
                 if self.wants_properties_image_url_prepend else ""
             plate_type = "" if self.properties_plate_type.value == NONE_CHOICE else self.properties_plate_type.value
             plate_id = "" if self.properties_plate_metadata.value == NONE_CHOICE else "%s_%s_%s" % (
-                cpmeas.IMAGE, cpmeas.C_METADATA, self.properties_plate_metadata.value)
+                cellprofiler.measurement.IMAGE, cellprofiler.measurement.C_METADATA, self.properties_plate_metadata.value)
             well_id = "" if self.properties_well_metadata.value == NONE_CHOICE else "%s_%s_%s" % (
-                cpmeas.IMAGE, cpmeas.C_METADATA, self.properties_well_metadata.value)
+                cellprofiler.measurement.IMAGE, cellprofiler.measurement.C_METADATA, self.properties_well_metadata.value)
             class_table = self.get_table_prefix() + self.properties_class_table_name.value
 
             contents = """#%(date)s
@@ -3751,30 +4047,30 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
 %s""" % display_tool
 
             axis_text = "x-axis" if workspace_group.measurement_display.value != W_PLATEVIEWER else "measurement"
-            if workspace_group.x_measurement_type.value == cpmeas.IMAGE:
-                axis_meas = "_".join((cpmeas.IMAGE, workspace_group.x_measurement_name.value))
-            elif workspace_group.x_measurement_type.value == cpmeas.OBJECT:
+            if workspace_group.x_measurement_type.value == cellprofiler.measurement.IMAGE:
+                axis_meas = "_".join((cellprofiler.measurement.IMAGE, workspace_group.x_measurement_name.value))
+            elif workspace_group.x_measurement_type.value == cellprofiler.measurement.OBJECT:
                 axis_meas = "_".join((workspace_group.x_object_name.value, workspace_group.x_measurement_name.value))
             elif workspace_group.x_measurement_type.value == W_INDEX:
                 axis_meas = workspace_group.x_index_name.value
             axis_table = "x-table" if workspace_group.measurement_display.value in (
                 W_SCATTERPLOT, W_DENSITYPLOT) else "table"
             table_name = self.get_table_name(
-                    cpmeas.OBJECT if workspace_group.x_measurement_type.value == cpmeas.OBJECT else cpmeas.IMAGE)
+                    cellprofiler.measurement.OBJECT if workspace_group.x_measurement_type.value == cellprofiler.measurement.OBJECT else cellprofiler.measurement.IMAGE)
             display_tool_text += """
 \t%s: %s
 \t%s: %s""" % (axis_text, axis_meas, axis_table, table_name)
 
             if workspace_group.measurement_display.value in (W_SCATTERPLOT, W_DENSITYPLOT):
-                if workspace_group.y_measurement_type.value == cpmeas.IMAGE:
-                    axis_meas = "_".join((cpmeas.IMAGE, workspace_group.y_measurement_name.value))
-                elif workspace_group.y_measurement_type.value == cpmeas.OBJECT:
+                if workspace_group.y_measurement_type.value == cellprofiler.measurement.IMAGE:
+                    axis_meas = "_".join((cellprofiler.measurement.IMAGE, workspace_group.y_measurement_name.value))
+                elif workspace_group.y_measurement_type.value == cellprofiler.measurement.OBJECT:
                     axis_meas = "_".join(
                             (workspace_group.y_object_name.value, workspace_group.y_measurement_name.value))
                 elif workspace_group.y_measurement_type.value == W_INDEX:
                     axis_meas = workspace_group.y_index_name.value
                 table_name = self.get_table_name(
-                        cpmeas.OBJECT if workspace_group.y_measurement_type.value == cpmeas.OBJECT else cpmeas.IMAGE)
+                        cellprofiler.measurement.OBJECT if workspace_group.y_measurement_type.value == cellprofiler.measurement.OBJECT else cellprofiler.measurement.IMAGE)
                 display_tool_text += """
 \ty-axis: %s
 \ty-table: %s""" % (axis_meas, table_name)
@@ -3791,20 +4087,20 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
         #
         FileNameWidth = 128
         PathNameWidth = 128
-        image_features = m.get_feature_names(cpmeas.IMAGE)
+        image_features = m.get_feature_names(cellprofiler.measurement.IMAGE)
         for feature in image_features:
-            if feature.startswith(C_FILE_NAME):
+            if feature.startswith(cellprofiler.modules.loadimages.C_FILE_NAME):
                 names = [name
-                         for name in m.get_all_measurements(cpmeas.IMAGE, feature)
+                         for name in m.get_all_measurements(cellprofiler.measurement.IMAGE, feature)
                          if name is not None]
                 if len(names) > 0:
-                    FileNameWidth = max(FileNameWidth, np.max(map(len, names)))
-            elif feature.startswith(C_PATH_NAME):
+                    FileNameWidth = max(FileNameWidth, numpy.max(map(len, names)))
+            elif feature.startswith(cellprofiler.modules.loadimages.C_PATH_NAME):
                 names = [name
-                         for name in m.get_all_measurements(cpmeas.IMAGE, feature)
+                         for name in m.get_all_measurements(cellprofiler.measurement.IMAGE, feature)
                          if name is not None]
                 if len(names) > 0:
-                    PathNameWidth = max(PathNameWidth, np.max(map(len, names)))
+                    PathNameWidth = max(PathNameWidth, numpy.max(map(len, names)))
         return FileNameWidth, PathNameWidth
 
     def get_table_prefix(self):
@@ -3842,15 +4138,15 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
         #
         def cmpfn(x, y):
             if x[0] != y[0]:
-                if x[0] == cpmeas.IMAGE:
+                if x[0] == cellprofiler.measurement.IMAGE:
                     return -1
-                elif y[0] == cpmeas.IMAGE:
+                elif y[0] == cellprofiler.measurement.IMAGE:
                     return 1
                 else:
                     return cmp(x[0], y[0])
-            if x[1] == M_NUMBER_OBJECT_NUMBER:
+            if x[1] == identify.M_NUMBER_OBJECT_NUMBER:
                 return -1
-            if y[1] == M_NUMBER_OBJECT_NUMBER:
+            if y[1] == identify.M_NUMBER_OBJECT_NUMBER:
                 return 1
             return cmp(x[1], y[1])
 
@@ -3882,31 +4178,31 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
         DIR_DEFAULT_IMAGE = "Default input folder"
 
         if from_matlab and variable_revision_number == 4:
-            setting_values = setting_values + [cps.NO]
+            setting_values = setting_values + [cellprofiler.setting.NO]
             variable_revision_number = 5
         if from_matlab and variable_revision_number == 5:
-            if setting_values[-1] == cps.YES:
+            if setting_values[-1] == cellprofiler.setting.YES:
                 setting_values = setting_values[:-1] + ["Yes - V1.0 format"]
             variable_revision_number = 6
         if from_matlab and variable_revision_number == 6:
             new_setting_values = [setting_values[0], setting_values[1]]
-            if setting_values[2] == cps.DO_NOT_USE:
-                new_setting_values.append(cps.NO)
+            if setting_values[2] == cellprofiler.setting.DO_NOT_USE:
+                new_setting_values.append(cellprofiler.setting.NO)
                 new_setting_values.append("MyExpt_")
             else:
-                new_setting_values.append(cps.YES)
+                new_setting_values.append(cellprofiler.setting.YES)
                 new_setting_values.append(setting_values[2])
             new_setting_values.append(setting_values[3])
             if setting_values[4] == '.':
-                new_setting_values.append(cps.YES)
+                new_setting_values.append(cellprofiler.setting.YES)
                 new_setting_values.append(setting_values[4])
             else:
-                new_setting_values.append(cps.NO)
+                new_setting_values.append(cellprofiler.setting.NO)
                 new_setting_values.append(setting_values[4])
-            if setting_values[5][:3] == cps.YES:
-                new_setting_values.append(cps.YES)
+            if setting_values[5][:3] == cellprofiler.setting.YES:
+                new_setting_values.append(cellprofiler.setting.YES)
             else:
-                new_setting_values.append(cps.NO)
+                new_setting_values.append(cellprofiler.setting.NO)
             from_matlab = False
             variable_revision_number = 6
             setting_values = new_setting_values
@@ -3914,8 +4210,8 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             #
             # Added object names
             #
-            setting_values = (setting_values[:-1] + [cpmeas.IMAGE] +
-                              [cps.DO_NOT_USE] * 3 + setting_values[-1:])
+            setting_values = (setting_values[:-1] + [cellprofiler.measurement.IMAGE] +
+                              [cellprofiler.setting.DO_NOT_USE] * 3 + setting_values[-1:])
             variable_revision_number = 8
 
         if from_matlab and variable_revision_number == 8:
@@ -3923,39 +4219,39 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             # Added more object names
             #
             setting_values = (setting_values[:-1] +
-                              [cps.DO_NOT_USE] * 3 + setting_values[-1:])
+                              [cellprofiler.setting.DO_NOT_USE] * 3 + setting_values[-1:])
             variable_revision_number = 9
         if from_matlab and variable_revision_number == 9:
             #
             # Per-well export
             #
             setting_values = (setting_values[:-1] +
-                              [cps.NO, cps.DO_NOT_USE, cps.DO_NOT_USE] +
+                              [cellprofiler.setting.NO, cellprofiler.setting.DO_NOT_USE, cellprofiler.setting.DO_NOT_USE] +
                               setting_values[-1:])
             variable_revision_number = 10
         if from_matlab and variable_revision_number == 10:
             new_setting_values = setting_values[0:2]
-            if setting_values[2] == cps.DO_NOT_USE:
-                new_setting_values.append(cps.NO)
+            if setting_values[2] == cellprofiler.setting.DO_NOT_USE:
+                new_setting_values.append(cellprofiler.setting.NO)
                 new_setting_values.append("MyExpt_")
             else:
-                new_setting_values.append(cps.YES)
+                new_setting_values.append(cellprofiler.setting.YES)
                 new_setting_values.append(setting_values[2])
             new_setting_values.append(setting_values[3])
             if setting_values[4] == '.':
-                new_setting_values.append(cps.YES)
+                new_setting_values.append(cellprofiler.setting.YES)
                 new_setting_values.append(setting_values[4])
             else:
-                new_setting_values.append(cps.NO)
+                new_setting_values.append(cellprofiler.setting.NO)
                 new_setting_values.append(setting_values[4])
-            if setting_values[18][:3] == cps.YES:
-                new_setting_values.append(cps.YES)
+            if setting_values[18][:3] == cellprofiler.setting.YES:
+                new_setting_values.append(cellprofiler.setting.YES)
             else:
-                new_setting_values.append(cps.NO)
+                new_setting_values.append(cellprofiler.setting.NO)
             #
             # store_csvs
             #
-            new_setting_values.append(cps.YES)
+            new_setting_values.append(cellprofiler.setting.YES)
             #
             # DB host / user / password
             #
@@ -3966,16 +4262,16 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             new_setting_values += ['DefaultDB.db']
             #
             # Aggregate mean, median & std dev
-            wants_mean = cps.NO
-            wants_std_dev = cps.NO
-            wants_median = cps.NO
+            wants_mean = cellprofiler.setting.NO
+            wants_std_dev = cellprofiler.setting.NO
+            wants_median = cellprofiler.setting.NO
             for setting in setting_values[5:8]:
                 if setting == "Median":
-                    wants_median = cps.YES
+                    wants_median = cellprofiler.setting.YES
                 elif setting == "Mean":
-                    wants_mean = cps.YES
+                    wants_mean = cellprofiler.setting.YES
                 elif setting == "Standard deviation":
-                    wants_std_dev = cps.YES
+                    wants_std_dev = cellprofiler.setting.YES
             new_setting_values += [wants_mean, wants_median, wants_std_dev]
             #
             # Object export
@@ -3985,7 +4281,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             else:
                 objects_list = []
                 for setting in setting_values[8:15]:
-                    if setting not in (cpmeas.IMAGE, cps.DO_NOT_USE):
+                    if setting not in (cellprofiler.measurement.IMAGE, cellprofiler.setting.DO_NOT_USE):
                         objects_list.append(setting)
                 if len(objects_list) > 0:
                     new_setting_values += [O_SELECT, ",".join(objects_list)]
@@ -4025,7 +4321,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             #
             # Added a directory choice instead of a checkbox
             #
-            if setting_values[5] == cps.NO or setting_values[6] == '.':
+            if setting_values[5] == cellprofiler.setting.NO or setting_values[6] == '.':
                 directory_choice = DIR_DEFAULT_OUTPUT
             elif setting_values[6] == '&':
                 directory_choice = DIR_DEFAULT_IMAGE
@@ -4041,7 +4337,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             # "store_csvs" setting
             #
             db_type = setting_values[0]
-            store_csvs = (setting_values[8] == cps.YES)
+            store_csvs = (setting_values[8] == cellprofiler.setting.YES)
             if db_type == DB_MYSQL and store_csvs:
                 db_type = DB_MYSQL_CSV
             setting_values = ([db_type] + setting_values[1:8] +
@@ -4069,14 +4365,14 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             dir_choice, custom_directory = setting_values[5:7]
             if dir_choice in (DIR_CUSTOM, DIR_CUSTOM_WITH_METADATA):
                 if custom_directory.startswith('.'):
-                    dir_choice = DEFAULT_OUTPUT_SUBFOLDER_NAME
+                    dir_choice = cellprofiler.preferences.DEFAULT_OUTPUT_SUBFOLDER_NAME
                 elif custom_directory.startswith('&'):
-                    dir_choice = DEFAULT_INPUT_SUBFOLDER_NAME
+                    dir_choice = cellprofiler.preferences.DEFAULT_INPUT_SUBFOLDER_NAME
                     custom_directory = '.' + custom_directory[1:]
                 else:
-                    dir_choice = ABSOLUTE_FOLDER_NAME
-            directory = cps.DirectoryPath.static_join_string(dir_choice,
-                                                             custom_directory)
+                    dir_choice = cellprofiler.preferences.ABSOLUTE_FOLDER_NAME
+            directory = cellprofiler.setting.DirectoryPath.static_join_string(dir_choice,
+                                                                              custom_directory)
             setting_values = (setting_values[:5] + [directory] +
                               setting_values[7:])
             variable_revision_number = 15
@@ -4088,21 +4384,21 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
         # Standardize input/output directory name references
         SLOT_DIRCHOICE = 5
         directory = setting_values[SLOT_DIRCHOICE]
-        directory = cps.DirectoryPath.upgrade_setting(directory)
+        directory = cellprofiler.setting.DirectoryPath.upgrade_setting(directory)
         setting_values[SLOT_DIRCHOICE] = directory
 
         if (not from_matlab) and variable_revision_number == 15:
             #
             # Added 3 new args: url_prepend and thumbnail options
             #
-            setting_values = setting_values + ["", cps.NO, ""]
+            setting_values = setting_values + ["", cellprofiler.setting.NO, ""]
             variable_revision_number = 16
 
         if (not from_matlab) and variable_revision_number == 16:
             #
             # Added binary choice for auto-scaling thumbnail intensities
             #
-            setting_values = setting_values + [cps.NO]
+            setting_values = setting_values + [cellprofiler.setting.NO]
             variable_revision_number = 17
 
         if (not from_matlab) and variable_revision_number == 17:
@@ -4123,11 +4419,11 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             #
             # Added configuration of image information, groups, filters in properties file
             #
-            setting_values = setting_values + [cps.YES, "1", "1", "0"]  # Hidden counts
-            setting_values = setting_values + ["None", cps.YES, "None", "gray"]  # Image info
-            setting_values = setting_values + [cps.NO, "",
+            setting_values = setting_values + [cellprofiler.setting.YES, "1", "1", "0"]  # Hidden counts
+            setting_values = setting_values + ["None", cellprofiler.setting.YES, "None", "gray"]  # Image info
+            setting_values = setting_values + [cellprofiler.setting.NO, "",
                                                "ImageNumber, Image_Metadata_Plate, Image_Metadata_Well"]  # Group specifications
-            setting_values = setting_values + [cps.NO, cps.NO]  # Filter specifications
+            setting_values = setting_values + [cellprofiler.setting.NO, cellprofiler.setting.NO]  # Filter specifications
             variable_revision_number = 20
 
         if (not from_matlab) and variable_revision_number == 20:
@@ -4137,11 +4433,11 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             setting_values = setting_values[:SETTING_WORKSPACE_GROUP_COUNT] + \
                              ["1"] + \
                              setting_values[SETTING_WORKSPACE_GROUP_COUNT:]  # workspace_measurement_count
-            setting_values += [cps.NO]  # create_workspace_file
+            setting_values += [cellprofiler.setting.NO]  # create_workspace_file
             setting_values += [W_SCATTERPLOT,  # measurement_display
-                               cpmeas.IMAGE, cpmeas.IMAGE, "", C_IMAGE_NUMBER,
+                               cellprofiler.measurement.IMAGE, cellprofiler.measurement.IMAGE, "", C_IMAGE_NUMBER,
                                # x_measurement_type, x_object_name, x_measurement_name, x_index_name
-                               cpmeas.IMAGE, cpmeas.IMAGE, "",
+                               cellprofiler.measurement.IMAGE, cellprofiler.measurement.IMAGE, "",
                                C_IMAGE_NUMBER]  # y_measurement_type, y_object_name, y_measurement_name, y_index_name
             variable_revision_number = 21
 
@@ -4151,7 +4447,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             #
             setting_values = (
                 setting_values[:SETTING_FIXED_SETTING_COUNT_V21] +
-                ["MyExpt", cps.NONE] +
+                ["MyExpt", cellprofiler.setting.NONE] +
                 setting_values[SETTING_FIXED_SETTING_COUNT_V21:])
             variable_revision_number = 22
 
@@ -4171,7 +4467,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             #
             setting_values = (
                 setting_values[:SETTING_FIXED_SETTING_COUNT_V23] +
-                [cps.NO] +
+                [cellprofiler.setting.NO] +
                 setting_values[SETTING_FIXED_SETTING_COUNT_V23:])
             variable_revision_number = 24
 
@@ -4192,7 +4488,7 @@ CP version : %d\n""" % int(re.sub(r"\.|rc\d{1}", "", cellprofiler.__version__))
             wants_urls = len(setting_values[SETTING_OFFSET_PROPERTIES_IMAGE_URL_PREPEND_V26]) > 0
             setting_values = \
                 setting_values[:SETTING_FIXED_SETTING_COUNT_V25] + \
-                [cps.YES if wants_urls else cps.NO] + \
+                [cellprofiler.setting.YES if wants_urls else cellprofiler.setting.NO] + \
                 setting_values[SETTING_FIXED_SETTING_COUNT_V25:]
             variable_revision_number = 26
 
