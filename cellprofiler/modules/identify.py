@@ -745,7 +745,18 @@ class Identify(cellprofiler.module.Module):
 
         mask = image.mask
 
-        local_threshold, global_threshold = self.get_threshold(image, mask, workspace, automatic)
+        if automatic:
+            local_threshold, global_threshold = self.get_automatic_threshold(img, mask)
+        elif self.threshold_scope.value == TS_MANUAL:
+            local_threshold = global_threshold = self.manual_threshold.value
+        elif self.threshold_scope.value == TS_MEASUREMENT:
+            local_threshold, global_threshold = self.get_measurement_threshold(workspace.measurements)
+        elif self.threshold_method.value == centrosome.threshold.TM_MCT:
+            local_threshold, global_threshold = self.get_mct_threshold(img, mask)
+        elif self.threshold_method.value == centrosome.threshold.TM_OTSU:
+            local_threshold, global_threshold = self.get_otsu_threshold(img, mask)
+        else:
+            local_threshold, global_threshold = self.get_robust_background_threshold(img, mask)
 
         if not automatic and self.threshold_scope in (TS_MEASUREMENT, TS_MANUAL):
             sigma = 0
@@ -765,96 +776,131 @@ class Identify(cellprofiler.module.Module):
 
             blurred_image = centrosome.smooth.smooth_with_function_and_mask(img, fn, mask)
 
-        if hasattr(workspace, "display_data"):
-            workspace.display_data.threshold_sigma = sigma
-
         binary_image = (blurred_image >= local_threshold) & mask
 
         self.add_fg_bg_measurements(workspace.measurements, img, mask, binary_image)
+
+        self.add_threshold_measurements(workspace.measurements, local_threshold, global_threshold)
+
+        if hasattr(workspace, "display_data"):
+            workspace.display_data.threshold_sigma = sigma
+
+            if hasattr(workspace.display_data, "statistics"):
+                workspace.display_data.statistics.append(["Threshold", "%0.3g" % global_threshold])
 
         if wants_local_threshold:
             return binary_image, local_threshold
 
         return binary_image
 
-    def get_threshold(self, image, mask, workspace, automatic=False):
-        img = image.pixel_data
+    def get_automatic_threshold(self, image, mask):
+        return centrosome.threshold.get_threshold(
+            centrosome.threshold.TM_MCT,
+            TS_GLOBAL,
+            image,
+            mask=mask,
+            labels=None,
+            adaptive_window_size=None,
+            threshold_range_min=0.0,
+            threshold_range_max=1.0,
+            threshold_correction_factor=1.0
+        )
 
-        if automatic:
-            local_threshold, global_threshold = centrosome.threshold.get_threshold(
-                centrosome.threshold.TM_MCT,
-                TS_GLOBAL,
-                img,
-                mask=mask,
-                labels=None,
-                adaptive_window_size=None,
-                threshold_range_min=0.0,
-                threshold_range_max=1.0,
-                threshold_correction_factor=1.0
-            )
-        elif self.threshold_scope == centrosome.threshold.TM_MANUAL:
-            local_threshold = global_threshold = self.manual_threshold.value
-        elif self.threshold_scope == centrosome.threshold.TM_MEASUREMENT:
-            m = workspace.measurements
+    def get_measurement_threshold(self, measurements):
+        # Thresholds are stored as single element arrays.  Cast to float to extract the value.
+        value = float(measurements.get_current_image_measurement(self.thresholding_measurement.value))
 
-            # Thresholds are stored as single element arrays.  Cast to float to extract the value.
-            value = float(m.get_current_image_measurement(self.thresholding_measurement.value))
+        value *= self.threshold_correction_factor.value
 
-            value *= self.threshold_correction_factor.value
+        if self.threshold_range.min is not None:
+            value = max(value, self.threshold_range.min)
 
-            if self.threshold_range.min is not None:
-                value = max(value, self.threshold_range.min)
+        if self.threshold_range.max is not None:
+            value = min(value, self.threshold_range.max)
 
-            if self.threshold_range.max is not None:
-                value = min(value, self.threshold_range.max)
+        return value, value
 
-            local_threshold = global_threshold = value
-        else:
-            labels = None
+    def get_mct_threshold(self, img, mask):
+        block_size = None
 
-            block_size = None
+        if self.threshold_scope == TS_ADAPTIVE:
+            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
 
-            if self.threshold_scope == TS_ADAPTIVE:
-                block_size = self.adaptive_window_size.value * numpy.array([1, 1])
+        kwparams = {
+            "threshold_range_min": self.threshold_range.min,
+            "threshold_range_max": self.threshold_range.max,
+            "threshold_correction_factor": self.threshold_correction_factor.value
+        }
 
-            kwparams = {
-                "threshold_range_min": self.threshold_range.min,
-                "threshold_range_max": self.threshold_range.max,
-                "threshold_correction_factor": self.threshold_correction_factor.value,
-                "two_class_otsu": self.two_class_otsu.value == O_TWO_CLASS,
-                "assign_middle_to_foreground": self.assign_middle_to_foreground.value == O_FOREGROUND,
-                "lower_outlier_fraction": self.lower_outlier_fraction.value,
-                "upper_outlier_fraction": self.upper_outlier_fraction.value,
-                "deviations_above_average": self.number_of_deviations.value
-            }
+        return centrosome.threshold.get_threshold(
+            self.threshold_method.value,
+            self.threshold_modifier,
+            img,
+            mask=mask,
+            labels=None,
+            adaptive_window_size=block_size,
+            **kwparams
+        )
 
-            kwparams["average_fn"] = {
-                RB_MEAN: numpy.mean,
-                RB_MEDIAN: numpy.median,
-                RB_MODE: centrosome.threshold.binned_mode
-            }.get(self.averaging_method.value, numpy.mean)
+    def get_otsu_threshold(self, img, mask):
+        block_size = None
 
-            kwparams["variance_fn"] = {
-                RB_SD: numpy.std,
-                RB_MAD: centrosome.threshold.mad
-            }.get(self.variance_method.value, numpy.std)
+        if self.threshold_scope == TS_ADAPTIVE:
+            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
 
-            local_threshold, global_threshold = centrosome.threshold.get_threshold(
-                self.threshold_method.value,
-                self.threshold_modifier,
-                img,
-                mask=mask,
-                labels=labels,
-                adaptive_window_size=block_size,
-                **kwparams
-            )
+        kwparams = {
+            "threshold_range_min": self.threshold_range.min,
+            "threshold_range_max": self.threshold_range.max,
+            "threshold_correction_factor": self.threshold_correction_factor.value,
+            "two_class_otsu": self.two_class_otsu.value == O_TWO_CLASS,
+            "assign_middle_to_foreground": self.assign_middle_to_foreground.value == O_FOREGROUND
+        }
 
-        self.add_threshold_measurements(workspace.measurements, local_threshold, global_threshold)
+        return centrosome.threshold.get_threshold(
+            self.threshold_method.value,
+            self.threshold_modifier,
+            img,
+            mask=mask,
+            labels=None,
+            adaptive_window_size=block_size,
+            **kwparams
+        )
 
-        if hasattr(workspace.display_data, "statistics"):
-            workspace.display_data.statistics.append(["Threshold", "%0.3g" % global_threshold])
+    def get_robust_background_threshold(self, img, mask):
+        block_size = None
 
-        return local_threshold, global_threshold
+        if self.threshold_scope == TS_ADAPTIVE:
+            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
+
+        kwparams = {
+            "threshold_range_min": self.threshold_range.min,
+            "threshold_range_max": self.threshold_range.max,
+            "threshold_correction_factor": self.threshold_correction_factor.value,
+            "lower_outlier_fraction": self.lower_outlier_fraction.value,
+            "upper_outlier_fraction": self.upper_outlier_fraction.value,
+            "deviations_above_average": self.number_of_deviations.value
+        }
+
+        kwparams["average_fn"] = {
+            RB_MEAN: numpy.mean,
+            RB_MEDIAN: numpy.median,
+            RB_MODE: centrosome.threshold.binned_mode
+        }.get(self.averaging_method.value, numpy.mean)
+
+        kwparams["variance_fn"] = {
+            RB_SD: numpy.std,
+            RB_MAD: centrosome.threshold.mad
+        }.get(self.variance_method.value, numpy.std)
+
+        return centrosome.threshold.get_threshold(
+            self.threshold_method.value,
+            self.threshold_modifier,
+            img,
+            mask=mask,
+            labels=None,
+            adaptive_window_size=block_size,
+            **kwparams
+        )
 
     def get_measurement_objects_name(self):
         '''Return the name of the measurement objects
