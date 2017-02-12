@@ -16,6 +16,7 @@ import cellprofiler.modules.identify
 import cellprofiler.object
 import cellprofiler.pipeline
 import cellprofiler.preferences
+import cellprofiler.thresholding
 import cellprofiler.workspace
 
 cellprofiler.preferences.set_headless()
@@ -359,7 +360,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         self.assertEqual(module.thresholding_measurement, "None")
         self.assertEqual(module.two_class_otsu, cellprofiler.modules.identify.O_TWO_CLASS)
         self.assertEqual(module.assign_middle_to_foreground, cellprofiler.modules.identify.O_FOREGROUND)
-        self.assertEqual(module.adaptive_window_size, 50)
+        self.assertEqual(module.adaptive_window_size, 51)
 
     def test_04_01_binary_manual(self):
         '''Test a binary threshold with manual threshold value'''
@@ -381,7 +382,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU
         module.run(workspace)
-        threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
+        threshold = cellprofiler.thresholding.otsu(cellprofiler.image.Image(image))
         expected = image > threshold
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
         self.assertTrue(numpy.all(output.pixel_data == expected))
@@ -395,7 +396,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         module.threshold_method.value = centrosome.threshold.TM_OTSU
         module.threshold_correction_factor.value = .5
         module.run(workspace)
-        threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
+        threshold = cellprofiler.thresholding.otsu(cellprofiler.image.Image(image)) * 0.5
         expected = image > threshold
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
         self.assertTrue(numpy.all(output.pixel_data == expected))
@@ -470,9 +471,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
                               numpy.random.poisson(30, size=300))).astype(numpy.float32)
         image.shape = (30, 30)
         image = centrosome.filter.stretch(image)
-        limage, d = centrosome.threshold.log_transform(image)
-        t1, t2 = centrosome.otsu.otsu3(limage)
-        threshold = centrosome.threshold.inverse_log_transform(t2, d)
+        _, threshold = cellprofiler.thresholding.otsu3(cellprofiler.image.Image(image))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU
@@ -483,17 +482,15 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         m_threshold = m[cellprofiler.measurement.IMAGE, cellprofiler.modules.identify.FF_ORIG_THRESHOLD % module.get_measurement_objects_name()]
         self.assertAlmostEqual(m_threshold, threshold)
 
-    def test_05_04_otsu3_wv_high(self):
-        '''Test the three-class otsu, weighted variance middle = foreground'''
+    def test_05_04_otsu3_foreground(self):
+        '''Test the three-class otsu, assign middle to foreground'''
         numpy.random.seed(0)
         image = numpy.hstack((numpy.random.exponential(1.5, size=300),
                               numpy.random.poisson(15, size=300),
                               numpy.random.poisson(30, size=300)))
         image.shape = (30, 30)
         image = centrosome.filter.stretch(image)
-        limage, d = centrosome.threshold.log_transform(image)
-        t1, t2 = centrosome.otsu.otsu3(limage)
-        threshold = centrosome.threshold.inverse_log_transform(t1, d)
+        threshold, _ = cellprofiler.thresholding.otsu3(cellprofiler.image.Image(image))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU

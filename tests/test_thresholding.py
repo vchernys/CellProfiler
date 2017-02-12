@@ -2,6 +2,7 @@ import cellprofiler.image
 import cellprofiler.thresholding
 import numpy
 import numpy.random
+import numpy.testing
 import pytest
 
 
@@ -109,9 +110,9 @@ def test_otsu3_zeros():
 
     lower, upper = cellprofiler.thresholding.otsu3(image)
 
-    assert lower == 0.0
+    numpy.testing.assert_almost_equal(lower, 0.0, decimal=5)
 
-    assert upper == 0.0
+    numpy.testing.assert_almost_equal(upper, 0.0, decimal=5)
 
 
 def test_otsu3_masked_zeros():
@@ -127,9 +128,9 @@ def test_otsu3_masked_zeros():
 
     lower, upper = cellprofiler.thresholding.otsu3(image)
 
-    assert lower == 0.0
+    numpy.testing.assert_almost_equal(lower, 0.0, decimal=5)
 
-    assert upper == 0.0
+    numpy.testing.assert_almost_equal(upper, 0.0, decimal=5)
 
 
 def test_otsu3_image():
@@ -178,9 +179,9 @@ def test_local_otsu3_zeros():
 
     lower, upper = cellprofiler.thresholding.local_otsu3(image, 3)
 
-    assert numpy.all(lower == 0.0)
+    numpy.testing.assert_almost_equal(lower, 0.0, decimal=5)
 
-    assert numpy.all(upper == 0.0)
+    numpy.testing.assert_almost_equal(upper, 0.0, decimal=5)
 
 
 def test_local_otsu3_masked_zeros():
@@ -196,9 +197,9 @@ def test_local_otsu3_masked_zeros():
 
     lower, upper = cellprofiler.thresholding.local_otsu3(image, 3)
 
-    assert numpy.all(lower == 0.0)
+    numpy.testing.assert_almost_equal(lower, 0.0, decimal=5)
 
-    assert numpy.all(upper == 0.0)
+    numpy.testing.assert_almost_equal(upper, 0.0, decimal=5)
 
 
 def test_local_otsu3_image():

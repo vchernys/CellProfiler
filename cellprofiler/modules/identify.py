@@ -10,6 +10,7 @@ import cellprofiler.gui.help
 import cellprofiler.measurement
 import cellprofiler.module
 import cellprofiler.setting
+import cellprofiler.thresholding
 
 O_TWO_CLASS = 'Two classes'
 O_THREE_CLASS = 'Three classes'
@@ -142,7 +143,7 @@ TECH_NOTE_ICON = "gear.png"
 
 
 class Identify(cellprofiler.module.Module):
-    threshold_setting_version = 3
+    threshold_setting_version = 4
 
     def create_threshold_settings(self):
         self.threshold_setting_version = cellprofiler.setting.Integer(
@@ -534,12 +535,12 @@ class Identify(cellprofiler.module.Module):
             })
         )
 
-        self.adaptive_window_size = cellprofiler.setting.Integer(
+        self.adaptive_window_size = cellprofiler.setting.OddInteger(
             "Size of adaptive window",
-            50,
+            51,
             doc="""
             Enter the window for the adaptive method. For example, you may want to use a multiple of the
-            largest expected object size.
+            largest expected object size. <i>Size must be odd.</i>
             """
         )
 
@@ -709,6 +710,13 @@ class Identify(cellprofiler.module.Module):
 
             version = 3
 
+        if version == 3:
+            if setting_values[1] == TS_ADAPTIVE:
+                window_size = int(setting_values[10])
+
+                if window_size % 2 == 0:
+                    setting_values[10] = window_size + 1
+
         setting_values[0] = version
 
         return setting_values
@@ -838,50 +846,28 @@ class Identify(cellprofiler.module.Module):
         )
 
     def get_otsu_threshold(self, image):
-        data = image.pixel_data
-
-        mask = image.mask
-
         if self.two_class_otsu.value == O_TWO_CLASS:
-            local_threshold = global_threshold = skimage.filters.threshold_otsu(data[mask])
+            local_threshold = global_threshold = cellprofiler.thresholding.otsu(image)
 
             if self.threshold_scope.value == TS_ADAPTIVE:
-                selem = skimage.morphology.square(self.adaptive_window_size.value)
+                local_threshold = cellprofiler.thresholding.local_otsu(image, self.adaptive_window_size.value)
+        else:
+            lower, upper = cellprofiler.thresholding.otsu3(image)
 
-                data = skimage.img_as_ubyte(data)
+            global_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
 
-                if image.volumetric:
-                    local_threshold = numpy.zeros_like(data)
+            local_threshold = global_threshold
 
-                    for index, plane in enumerate(data):
-                        local_threshold[index] = skimage.filters.rank.otsu(plane, selem, mask=mask[index])
-                else:
-                    local_threshold = skimage.filters.rank.otsu(data, selem, mask=mask)
+            if self.threshold_scope.value == TS_ADAPTIVE:
+                lower, upper = cellprofiler.thresholding.local_otsu3(image, self.adaptive_window_size.value)
 
-                local_threshold = skimage.img_as_float(local_threshold)
+                local_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
 
-            local_threshold *= self.threshold_correction_factor.value
+        local_threshold *= self.threshold_correction_factor.value
 
-            local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
 
-            return local_threshold, global_threshold
-
-        kwparams = {
-            "threshold_range_min": self.threshold_range.min,
-            "threshold_range_max": self.threshold_range.max,
-            "threshold_correction_factor": self.threshold_correction_factor.value,
-            "two_class_otsu": False,
-            "assign_middle_to_foreground": self.assign_middle_to_foreground.value == O_FOREGROUND
-        }
-
-        return centrosome.threshold.get_threshold(
-            self.threshold_method.value,
-            self.threshold_modifier,
-            data,
-            mask=mask,
-            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
-            **kwparams
-        )
+        return local_threshold, global_threshold
 
     def get_robust_background_threshold(self, image):
         kwparams = {

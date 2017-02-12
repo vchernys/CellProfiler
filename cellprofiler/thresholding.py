@@ -1,4 +1,5 @@
 import centrosome.otsu
+import centrosome.threshold
 import numpy
 import skimage.filters
 import skimage.filters.rank
@@ -17,7 +18,17 @@ def otsu(image):
 
 
 def otsu3(image):
-    return centrosome.otsu.otsu3(image.pixel_data[image.mask])
+    data = image.pixel_data[image.mask]
+
+    data, d = centrosome.threshold.log_transform(data)
+
+    lower, upper = centrosome.otsu.otsu3(image.pixel_data[image.mask])
+
+    lower = centrosome.threshold.inverse_log_transform(lower, d)
+
+    upper = centrosome.threshold.inverse_log_transform(upper, d)
+
+    return lower, upper
 
 
 def local_otsu(image, block_size):
@@ -42,6 +53,8 @@ def local_otsu3(image, block_size):
     data = image.pixel_data
 
     data[~image.mask] = 0
+
+    data, d = centrosome.threshold.log_transform(data)
 
     if image.volumetric:
         lower = numpy.zeros_like(data)
@@ -76,5 +89,9 @@ def local_otsu3(image, block_size):
             method="generic",
             param=lambda x: centrosome.otsu.otsu3(x)[1]
         )
+
+    lower = centrosome.threshold.inverse_log_transform(lower, d)
+
+    upper = centrosome.threshold.inverse_log_transform(upper, d)
 
     return lower, upper
