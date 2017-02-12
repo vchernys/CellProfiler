@@ -2,6 +2,9 @@ import centrosome.smooth
 import centrosome.threshold
 import numpy
 import scipy.ndimage
+import skimage.filters
+import skimage.filters.rank
+import skimage.morphology
 
 import cellprofiler.gui.help
 import cellprofiler.measurement
@@ -746,17 +749,17 @@ class Identify(cellprofiler.module.Module):
         mask = image.mask
 
         if automatic:
-            local_threshold, global_threshold = self.get_automatic_threshold(img, mask)
+            local_threshold, global_threshold = self.get_automatic_threshold(image)
         elif self.threshold_scope.value == TS_MANUAL:
             local_threshold = global_threshold = self.manual_threshold.value
         elif self.threshold_scope.value == TS_MEASUREMENT:
             local_threshold, global_threshold = self.get_measurement_threshold(workspace.measurements)
         elif self.threshold_method.value == centrosome.threshold.TM_MCT:
-            local_threshold, global_threshold = self.get_mct_threshold(img, mask)
+            local_threshold, global_threshold = self.get_mct_threshold(image)
         elif self.threshold_method.value == centrosome.threshold.TM_OTSU:
-            local_threshold, global_threshold = self.get_otsu_threshold(img, mask)
+            local_threshold, global_threshold = self.get_otsu_threshold(image)
         else:
-            local_threshold, global_threshold = self.get_robust_background_threshold(img, mask)
+            local_threshold, global_threshold = self.get_robust_background_threshold(image)
 
         if not automatic and self.threshold_scope in (TS_MEASUREMENT, TS_MANUAL):
             sigma = 0
@@ -793,14 +796,12 @@ class Identify(cellprofiler.module.Module):
 
         return binary_image
 
-    def get_automatic_threshold(self, image, mask):
+    def get_automatic_threshold(self, image):
         return centrosome.threshold.get_threshold(
             centrosome.threshold.TM_MCT,
             TS_GLOBAL,
-            image,
-            mask=mask,
-            labels=None,
-            adaptive_window_size=None,
+            image.pixel_data,
+            mask=image.mask,
             threshold_range_min=0.0,
             threshold_range_max=1.0,
             threshold_correction_factor=1.0
@@ -820,12 +821,7 @@ class Identify(cellprofiler.module.Module):
 
         return value, value
 
-    def get_mct_threshold(self, img, mask):
-        block_size = None
-
-        if self.threshold_scope == TS_ADAPTIVE:
-            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
-
+    def get_mct_threshold(self, image):
         kwparams = {
             "threshold_range_min": self.threshold_range.min,
             "threshold_range_max": self.threshold_range.max,
@@ -835,43 +831,59 @@ class Identify(cellprofiler.module.Module):
         return centrosome.threshold.get_threshold(
             self.threshold_method.value,
             self.threshold_modifier,
-            img,
-            mask=mask,
-            labels=None,
-            adaptive_window_size=block_size,
+            image.pixel_data,
+            mask=image.mask,
+            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
             **kwparams
         )
 
-    def get_otsu_threshold(self, img, mask):
-        block_size = None
+    def get_otsu_threshold(self, image):
+        data = image.pixel_data
 
-        if self.threshold_scope == TS_ADAPTIVE:
-            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
+        mask = image.mask
+
+        if self.two_class_otsu.value == O_TWO_CLASS:
+            local_threshold = global_threshold = skimage.filters.threshold_otsu(data[mask])
+
+            if self.threshold_scope.value == TS_ADAPTIVE:
+                selem = skimage.morphology.square(self.adaptive_window_size.value)
+
+                data = skimage.img_as_ubyte(data)
+
+                if image.volumetric:
+                    local_threshold = numpy.zeros_like(data)
+
+                    for index, plane in enumerate(data):
+                        local_threshold[index] = skimage.filters.rank.otsu(plane, selem, mask=mask[index])
+                else:
+                    local_threshold = skimage.filters.rank.otsu(data, selem, mask=mask)
+
+                local_threshold = skimage.img_as_float(local_threshold)
+
+            local_threshold *= self.threshold_correction_factor.value
+
+            local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+
+            return local_threshold, global_threshold
 
         kwparams = {
             "threshold_range_min": self.threshold_range.min,
             "threshold_range_max": self.threshold_range.max,
             "threshold_correction_factor": self.threshold_correction_factor.value,
-            "two_class_otsu": self.two_class_otsu.value == O_TWO_CLASS,
+            "two_class_otsu": False,
             "assign_middle_to_foreground": self.assign_middle_to_foreground.value == O_FOREGROUND
         }
 
         return centrosome.threshold.get_threshold(
             self.threshold_method.value,
             self.threshold_modifier,
-            img,
+            data,
             mask=mask,
-            labels=None,
-            adaptive_window_size=block_size,
+            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
             **kwparams
         )
 
-    def get_robust_background_threshold(self, img, mask):
-        block_size = None
-
-        if self.threshold_scope == TS_ADAPTIVE:
-            block_size = self.adaptive_window_size.value * numpy.array([1, 1])
-
+    def get_robust_background_threshold(self, image):
         kwparams = {
             "threshold_range_min": self.threshold_range.min,
             "threshold_range_max": self.threshold_range.max,
@@ -895,12 +907,29 @@ class Identify(cellprofiler.module.Module):
         return centrosome.threshold.get_threshold(
             self.threshold_method.value,
             self.threshold_modifier,
-            img,
-            mask=mask,
-            labels=None,
-            adaptive_window_size=block_size,
+            image.pixel_data,
+            mask=image.mask,
+            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
             **kwparams
         )
+
+    def constrain_threshold(self, local_threshold, global_threshold):
+        if isinstance(local_threshold, numpy.ndarray):
+            threshold_range_min = max(self.threshold_range.min, global_threshold * 0.7)
+
+            threshold_range_max = min(self.threshold_range.max, global_threshold * 1.5)
+
+            local_threshold[local_threshold < threshold_range_min] = threshold_range_min
+
+            local_threshold[local_threshold > threshold_range_max] = threshold_range_max
+
+            return local_threshold
+
+        local_threshold = max(local_threshold, self.threshold_range.min)
+
+        local_threshold = min(local_threshold, self.threshold_range.max)
+
+        return local_threshold
 
     def get_measurement_objects_name(self):
         '''Return the name of the measurement objects

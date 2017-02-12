@@ -2103,7 +2103,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         assert isinstance(x, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects)
         x.threshold_scope.value = centrosome.threshold.TM_ADAPTIVE
         x.threshold_method.value = centrosome.threshold.TM_OTSU
-        threshold, global_threshold = x.get_otsu_threshold(image, numpy.ones_like(image, dtype=bool))
+        threshold, global_threshold = x.get_otsu_threshold(cellprofiler.image.Image(image))
         self.assertTrue(threshold[0, 0] != threshold[0, 109])
         self.assertTrue(threshold[0, 0] != threshold[119, 0])
         self.assertTrue(threshold[0, 0] != threshold[119, 109])
@@ -2140,37 +2140,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         assert isinstance(x, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects)
         x.threshold_scope.value = centrosome.threshold.TM_ADAPTIVE
         x.threshold_method.value = centrosome.threshold.TM_OTSU
-        threshold, global_threshold = x.get_otsu_threshold(image, numpy.ones_like(image, dtype=bool))
-
-    def test_09_01_small_images(self):
-        """Test mixture of gaussians thresholding with few pixels
-
-        Run MOG to see if it blows up, given 0-10 pixels"""
-        r = numpy.random.RandomState()
-        r.seed(91)
-        image = r.uniform(size=(9, 11))
-        ii, jj = numpy.mgrid[0:image.shape[0], 0:image.shape[1]]
-        ii, jj = ii.flatten(), jj.flatten()
-
-        for threshold_method, method_def in (
-                (centrosome.threshold.TM_MCT, "get_mct_threshold"),
-                (centrosome.threshold.TM_OTSU, "get_otsu_threshold"),
-                (centrosome.threshold.TM_ROBUST_BACKGROUND, "get_robust_background_threshold")
-        ):
-            for i in range(11):
-                mask = numpy.zeros(image.shape, bool)
-                if i:
-                    p = r.permutation(numpy.prod(image.shape))[:i]
-                    mask[ii[p], jj[p]] = True
-                workspace, x = self.make_workspace(image, mask)
-                x.threshold_method.value = threshold_method
-                x.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-                l, g = getattr(x, method_def)(image, mask)
-                v = image[mask]
-                image = r.uniform(size=(9, 11))
-                image[mask] = v
-                l1, g1 = getattr(x, method_def)(image, mask)
-                self.assertAlmostEqual(l1, l)
+        threshold, global_threshold = x.get_otsu_threshold(cellprofiler.image.Image(image))
 
     # def test_11_01_test_robust_background_fly(self):
     #     image = fly_image()

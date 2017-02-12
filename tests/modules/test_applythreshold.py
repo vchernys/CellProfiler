@@ -377,12 +377,12 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         '''Test a binary threshold with Otsu global method'''
         numpy.random.seed(0)
         image = numpy.random.uniform(size=(20, 20))
-        threshold = centrosome.threshold.get_otsu_threshold(image)
-        expected = image > threshold
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU
         module.run(workspace)
+        threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
+        expected = image > threshold
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
         self.assertTrue(numpy.all(output.pixel_data == expected))
 
@@ -390,13 +390,13 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         '''Test a binary threshold with a correction factor'''
         numpy.random.seed(0)
         image = numpy.random.uniform(size=(20, 20))
-        threshold = centrosome.threshold.get_otsu_threshold(image) * .5
-        expected = image > threshold
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU
         module.threshold_correction_factor.value = .5
         module.run(workspace)
+        threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
+        expected = image > threshold
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
         self.assertTrue(numpy.all(output.pixel_data == expected))
 
@@ -452,15 +452,13 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
                               numpy.random.poisson(15, size=300)))
         image.shape = (30, 30)
         image = centrosome.filter.stretch(image)
-        limage, d = centrosome.threshold.log_transform(image)
-        threshold = centrosome.otsu.otsu(limage)
-        threshold = centrosome.threshold.inverse_log_transform(threshold, d)
-        expected = image > threshold
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.threshold_method.value = centrosome.threshold.TM_OTSU
         module.two_class_otsu.value = cellprofiler.modules.identify.O_TWO_CLASS
         module.run(workspace)
+        threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
+        expected = image > threshold
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
         self.assertTrue(numpy.all(output.pixel_data == expected))
 
