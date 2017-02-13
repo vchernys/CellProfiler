@@ -1,5 +1,6 @@
 import cellprofiler.image
 import cellprofiler.thresholding
+import centrosome.threshold
 import numpy
 import numpy.random
 import numpy.testing
@@ -232,3 +233,233 @@ def test_local_otsu3_volume():
     assert numpy.all(lower <= 1.0)
 
     assert numpy.all(upper <= 1.0)
+
+
+def test_robust_background_image_mean():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="mean"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_image_median():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="median"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.median,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_image_mode():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="mode"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=centrosome.threshold.binned_mode,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_image_sd():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        variance_method="sd"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_image_mad():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        variance_method="mad"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=centrosome.threshold.mad
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_volume_mean():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="mean"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_volume_median():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="median"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.median,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_volume_mode():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        average_method="mode"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=centrosome.threshold.binned_mode,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_volume_sd():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        variance_method="sd"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=numpy.std
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_robust_background_volume_mad():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.robust_background(
+        image,
+        variance_method="mad"
+    )
+
+    expected = centrosome.threshold.get_robust_background_threshold(
+        data,
+        mask=numpy.ones_like(data, dtype=numpy.bool),
+        lower_outlier_fraction=0.05,
+        upper_outlier_fraction=0.05,
+        deviations_above_average=2,
+        average_fn=numpy.mean,
+        variance_fn=centrosome.threshold.mad
+    )
+
+    numpy.testing.assert_almost_equal(threshold, expected)

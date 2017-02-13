@@ -97,7 +97,7 @@ def local_otsu3(image, block_size):
     return lower, upper
 
 
-def robust_background(image, lower, upper, average_method="mean", variance_method="sd", n_deviations=2):
+def robust_background(image, lower=0.05, upper=0.05, average_method="mean", variance_method="sd", n_deviations=2):
     average_fn = {
         "mean": numpy.mean,
         "median": numpy.median,
