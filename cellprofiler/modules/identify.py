@@ -870,34 +870,21 @@ class Identify(cellprofiler.module.Module):
         return local_threshold, global_threshold
 
     def get_robust_background_threshold(self, image):
-        kwparams = {
-            "threshold_range_min": self.threshold_range.min,
-            "threshold_range_max": self.threshold_range.max,
-            "threshold_correction_factor": self.threshold_correction_factor.value,
-            "lower_outlier_fraction": self.lower_outlier_fraction.value,
-            "upper_outlier_fraction": self.upper_outlier_fraction.value,
-            "deviations_above_average": self.number_of_deviations.value
-        }
-
-        kwparams["average_fn"] = {
-            RB_MEAN: numpy.mean,
-            RB_MEDIAN: numpy.median,
-            RB_MODE: centrosome.threshold.binned_mode
-        }.get(self.averaging_method.value, numpy.mean)
-
-        kwparams["variance_fn"] = {
-            RB_SD: numpy.std,
-            RB_MAD: centrosome.threshold.mad
-        }.get(self.variance_method.value, numpy.std)
-
-        return centrosome.threshold.get_threshold(
-            self.threshold_method.value,
-            self.threshold_modifier,
+        local_threshold = global_threshold = cellprofiler.thresholding.robust_background(
             image.pixel_data,
-            mask=image.mask,
-            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
-            **kwparams
+            image.mask,
+            lower=self.lower_outlier_fraction.value,
+            upper=self.upper_outlier_fraction.value,
+            average_method=self.averaging_method.value.lower(),
+            variance_method="mad" if self.variance_method.value == RB_MAD else "sd",
+            n_deviations=self.number_of_deviations.value
         )
+
+        local_threshold *= self.threshold_correction_factor.value
+
+        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+
+        return local_threshold, global_threshold
 
     def constrain_threshold(self, local_threshold, global_threshold):
         if isinstance(local_threshold, numpy.ndarray):
