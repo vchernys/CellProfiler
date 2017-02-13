@@ -191,7 +191,6 @@ class Identify(cellprofiler.module.Module):
         self.local_operation = cellprofiler.setting.Choice(
             "Thresholding method",
             [
-                centrosome.threshold.TM_MCT,  # TODO: change to minimum cross entropy, global only
                 centrosome.threshold.TM_OTSU
             ],
             value=centrosome.threshold.TM_OTSU,
@@ -222,20 +221,6 @@ class Identify(cellprofiler.module.Module):
                         background). See the help below for more details.</dd>
                     </dl>
                 </li>
-                <li>
-                    <i>Maximum correlation thresholding ({TM_MCT}):</i> This method computes the maximum
-                    correlation between the binary mask created by thresholding and the thresholded image and
-                    is somewhat similar mathematically to <i>{TM_OTSU}</i>.
-                    <dl>
-                        <dd><img src="memory:{PROTIP_RECOMEND_ICON}">&nbsp; The authors of this method claim
-                        superior results when thresholding images of neurites and other images that have sparse
-                        foreground densities.</dd>
-                    </dl>
-                    <dl>
-                        <dd><img src="memory:{TECH_NOTE_ICON}">&nbsp; This is an implementation of the method
-                        described in Padmanabhan <i>et al</i>, 2010.</dd>
-                    </dl>
-                </li>
             </ul>
             <p><b>References</b></p>
             <ul>
@@ -243,15 +228,10 @@ class Identify(cellprofiler.module.Module):
                 performance evaluation." <i>Journal of Electronic Imaging</i>, 13(1), 146-165. (<a href=
                 "http://dx.doi.org/10.1117/1.1631315">link</a>)
                 </li>
-                <li>Padmanabhan K, Eddy WF, Crowley JC (2010) "A novel algorithm for optimal image thresholding
-                of biological data" <i>Journal of Neuroscience Methods</i> 193, 380-384. (<a href=
-                "http://dx.doi.org/10.1016/j.jneumeth.2010.08.031">link</a>)
-                </li>
             </ul>
             """.format(**{
                 "PROTIP_RECOMEND_ICON": PROTIP_RECOMEND_ICON,
                 "TECH_NOTE_ICON": TECH_NOTE_ICON,
-                "TM_MCT": centrosome.threshold.TM_MCT,
                 "TM_OTSU": centrosome.threshold.TM_OTSU,
                 "TS_ADAPTIVE": TS_ADAPTIVE
             })
@@ -784,7 +764,7 @@ class Identify(cellprofiler.module.Module):
 
                 setting_values += [setting_values[2]]
 
-            if setting_values[2] == centrosome.threshold.TM_ROBUST_BACKGROUND:
+            if setting_values[2] in [centrosome.threshold.TM_MCT, centrosome.threshold.TM_ROBUST_BACKGROUND]:
                 setting_values[1] = TS_GLOBAL
 
             if setting_values[1] in [TM_MANUAL, TM_MEASUREMENT]:
@@ -935,7 +915,6 @@ class Identify(cellprofiler.module.Module):
             self.threshold_modifier,
             image.pixel_data,
             mask=image.mask,
-            adaptive_window_size=self.adaptive_window_size.value if self.threshold_scope.value == TS_ADAPTIVE else None,
             **kwparams
         )
 
