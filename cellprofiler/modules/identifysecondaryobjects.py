@@ -758,7 +758,7 @@ class IdentifySecondaryObjects(cpmi.Identify):
                                "%.1f pixels" % median_diameter])
             statistics.append(["90th pctile diameter",
                                "%.1f pixels" % high_diameter])
-            if self.method != M_DISTANCE_N and self.threshold_scope != TS_BINARY_IMAGE:
+            if self.method != M_DISTANCE_N:
                 statistics.append(["Thresholding filter size",
                                    "%.1f" % workspace.display_data.threshold_sigma])
             statistics.append(["Area covered by objects", "%.1f %%" % object_pct])

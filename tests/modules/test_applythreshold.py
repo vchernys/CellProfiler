@@ -83,7 +83,8 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertTrue(isinstance(module, cellprofiler.modules.applythreshold.ApplyThreshold))
         self.assertEqual(module.image_name.value, "OrigBlue")
         self.assertEqual(module.thresholded_image_name.value, "ThreshBlue")
-        self.assertEqual(module.threshold_scope, centrosome.threshold.TM_MANUAL)
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
+        self.assertEqual(module.global_operation.value, cellprofiler.modules.identify.TM_MANUAL)
         self.assertAlmostEqual(module.manual_threshold.value, .1)
         self.assertEqual(module.threshold_smoothing_scale, 0)
 
@@ -126,7 +127,7 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertEqual(module.image_name.value, "DNA")
         self.assertEqual(module.thresholded_image_name.value, "ThreshDNA")
         self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
-        self.assertEqual(module.threshold_method.value, centrosome.threshold.TM_OTSU)
+        self.assertEqual(module.global_operation.value, centrosome.threshold.TM_OTSU)
         self.assertEqual(module.threshold_range.min, 0)
         self.assertEqual(module.threshold_range.max, 1)
         self.assertEqual(module.threshold_correction_factor.value, 1)
@@ -168,7 +169,7 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertEqual(module.image_name.value, "DNA")
         self.assertEqual(module.thresholded_image_name.value, "ThreshBlue")
         self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
-        self.assertEqual(module.threshold_method.value, centrosome.threshold.TM_OTSU)
+        self.assertEqual(module.global_operation.value, centrosome.threshold.TM_OTSU)
         self.assertEqual(module.threshold_range.min, 0)
         self.assertEqual(module.threshold_range.max, 1)
         self.assertEqual(module.threshold_correction_factor.value, 1)
@@ -254,7 +255,7 @@ class TestApplyThreshold(unittest.TestCase):
         self.assertEqual(module.image_name, "RainbowPony")
         self.assertEqual(module.thresholded_image_name, "GrayscalePony")
         self.assertEqual(module.threshold_scope, cellprofiler.modules.identify.TS_ADAPTIVE)
-        self.assertEqual(module.threshold_method, centrosome.threshold.TM_MCT)
+        self.assertEqual(module.local_operation.value, centrosome.threshold.TM_MCT)
         self.assertEqual(module.threshold_smoothing_scale, 1.3488)
         self.assertEqual(module.threshold_correction_factor, 1.1)
         self.assertEqual(module.threshold_range.min, .07)
@@ -351,7 +352,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         self.assertEqual(module.image_name, "DNA")
         self.assertEqual(module.thresholded_image_name, "ThreshBlue")
         self.assertEqual(module.threshold_scope, cellprofiler.modules.identify.TS_GLOBAL)
-        self.assertEqual(module.threshold_method, centrosome.threshold.TM_MCT)
+        self.assertEqual(module.global_operation.value, centrosome.threshold.TM_MCT)
         self.assertEqual(module.threshold_smoothing_scale, 0)
         self.assertEqual(module.threshold_correction_factor, 1.0)
         self.assertEqual(module.threshold_range.min, 0.0)
@@ -368,7 +369,8 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         image = numpy.random.uniform(size=(20, 20))
         expected = image > .5
         workspace, module = self.make_workspace(image)
-        module.threshold_scope.value = centrosome.threshold.TM_MANUAL
+        module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
+        module.global_operation.value = cellprofiler.modules.identify.TM_MANUAL
         module.manual_threshold.value = .5
         module.run(workspace)
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
@@ -380,7 +382,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         image = numpy.random.uniform(size=(20, 20))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.run(workspace)
         threshold = cellprofiler.thresholding.otsu(cellprofiler.image.Image(image))
         expected = image > threshold
@@ -393,7 +395,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         image = numpy.random.uniform(size=(20, 20))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.threshold_correction_factor.value = .5
         module.run(workspace)
         threshold = cellprofiler.thresholding.otsu(cellprofiler.image.Image(image)) * 0.5
@@ -410,7 +412,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         expected = image > .7
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.threshold_range.min = .7
         module.run(workspace)
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
@@ -424,7 +426,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         expected = image > .1
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.threshold_range.max = .1
         module.run(workspace)
         output = workspace.image_set.get_image(OUTPUT_IMAGE_NAME)
@@ -455,7 +457,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         image = centrosome.filter.stretch(image)
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.two_class_otsu.value = cellprofiler.modules.identify.O_TWO_CLASS
         module.run(workspace)
         threshold, _ = module.get_otsu_threshold(cellprofiler.image.Image(image))
@@ -474,7 +476,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         _, threshold = cellprofiler.thresholding.otsu3(cellprofiler.image.Image(image))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.two_class_otsu.value = cellprofiler.modules.identify.O_THREE_CLASS
         module.assign_middle_to_foreground.value = cellprofiler.modules.identify.O_BACKGROUND
         module.run(workspace)
@@ -493,7 +495,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         threshold, _ = cellprofiler.thresholding.otsu3(cellprofiler.image.Image(image))
         workspace, module = self.make_workspace(image)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.threshold_method.value = centrosome.threshold.TM_OTSU
+        module.global_operation.value = centrosome.threshold.TM_OTSU
         module.two_class_otsu.value = cellprofiler.modules.identify.O_THREE_CLASS
         module.assign_middle_to_foreground.value = cellprofiler.modules.identify.O_FOREGROUND
         module.run(workspace)
