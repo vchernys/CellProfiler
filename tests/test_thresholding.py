@@ -463,3 +463,51 @@ def test_robust_background_volume_mad():
     )
 
     numpy.testing.assert_almost_equal(threshold, expected)
+
+
+def test_minimum_cross_entropy_zeros():
+    image = cellprofiler.image.Image(numpy.zeros((10, 10), dtype=numpy.float32))
+
+    threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+
+    assert threshold == 0.0
+
+
+def test_minimum_cross_entropy_masked_zeros():
+    data = numpy.random.rand(10, 10)
+
+    data[2:5, 2:5] = 0.0
+
+    mask = numpy.zeros_like(data, dtype=numpy.bool)
+
+    mask[2:5, 2:5] = True
+
+    image = cellprofiler.image.Image(data, mask=mask)
+
+    threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+
+    assert threshold == 0.0
+
+
+def test_minimum_cross_entropy_image():
+    data = numpy.random.rand(10, 10)
+
+    image = cellprofiler.image.Image(data)
+
+    threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+
+    assert threshold >= 0.0
+
+    assert threshold <= 1.0
+
+
+def test_minimum_cross_entropy_volume():
+    data = numpy.random.rand(10, 10, 10)
+
+    image = cellprofiler.image.Image(data, dimensions=3)
+
+    threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+
+    assert threshold >= 0.0
+
+    assert threshold <= 1.0

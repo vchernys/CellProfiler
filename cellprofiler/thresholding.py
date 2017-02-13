@@ -118,3 +118,14 @@ def robust_background(image, lower=0.05, upper=0.05, average_method="mean", vari
         average_fn=average_fn,
         variance_fn=variance_fn
     )
+
+
+def minimum_cross_entropy(image):
+    data = image.pixel_data
+
+    mask = image.mask
+
+    if numpy.all(data[mask] == data[mask][0]):
+        return data[mask][0]
+
+    return skimage.filters.threshold_li(data[mask])
