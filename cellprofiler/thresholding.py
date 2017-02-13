@@ -95,3 +95,26 @@ def local_otsu3(image, block_size):
     upper = centrosome.threshold.inverse_log_transform(upper, d)
 
     return lower, upper
+
+
+def robust_background(image, lower, upper, average_method="mean", variance_method="sd", n_deviations=2):
+    average_fn = {
+        "mean": numpy.mean,
+        "median": numpy.median,
+        "mode": centrosome.threshold.binned_mode
+    }.get(average_method, numpy.mean)
+
+    variance_fn = {
+        "sd": numpy.std,
+        "mad": centrosome.threshold.mad
+    }.get(variance_method, numpy.std)
+
+    return centrosome.threshold.get_robust_background_threshold(
+        image.pixel_data,
+        mask=image.mask,
+        lower_outlier_fraction=lower,
+        upper_outlier_fraction=upper,
+        deviations_above_average=n_deviations,
+        average_fn=average_fn,
+        variance_fn=variance_fn
+    )
