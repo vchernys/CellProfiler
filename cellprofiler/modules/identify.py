@@ -874,8 +874,7 @@ class Identify(cellprofiler.module.Module):
             local_threshold, global_threshold = self.get_otsu_threshold(image)
         else:
             local_threshold = global_threshold = cellprofiler.thresholding.robust_background(
-                image.pixel_data,
-                image.mask,
+                image,
                 lower=self.lower_outlier_fraction.value,
                 upper=self.upper_outlier_fraction.value,
                 average_method=self.averaging_method.value.lower(),
@@ -982,7 +981,7 @@ class Identify(cellprofiler.module.Module):
             # derived class does not have thresholding settings
             return
 
-        if not self.use_automatic.value and self.threshold_scope == TS_GLOBAL:
+        if hasattr(self, "use_advanced") and not self.use_advanced.value and self.threshold_scope == TS_GLOBAL:
             if self.global_operation.value == centrosome.threshold.TM_ROBUST_BACKGROUND:
                 if self.lower_outlier_fraction.value + self.upper_outlier_fraction.value >= 1:
                     raise cellprofiler.setting.ValidationError(
