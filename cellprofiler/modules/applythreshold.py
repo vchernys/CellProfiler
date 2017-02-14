@@ -99,9 +99,7 @@ class ApplyThreshold(identify.Identify):
     def display(self, workspace, figure):
         dimensions = workspace.display_data.dimensions
 
-        # figure.set_subplots((3, 1), dimensions=dimensions)
-
-        figure.set_subplots((2, 1), dimensions=dimensions)
+        figure.set_subplots((3, 1), dimensions=dimensions)
 
         figure.subplot_imshow_grayscale(
             0,
@@ -114,16 +112,17 @@ class ApplyThreshold(identify.Identify):
         figure.subplot_imshow_grayscale(
             1,
             0, workspace.display_data.output_pixel_data,
-            title="Thresholded image: %s" % self.thresholded_image_name.value,
+            title=u"Thresholded image: {0:s}".format(self.thresholded_image_name.value),
             dimensions=dimensions
         )
 
-        # figure.subplot_table(
-        #     2,
-        #     0,
-        #     workspace.display_data.statistics,
-        #     workspace.display_data.col_labels
-        # )
+        figure.subplot_table(
+            2,
+            0,
+            workspace.display_data.statistics,
+            workspace.display_data.col_labels,
+            dimensions=dimensions
+        )
 
     def get_measurement_objects_name(self):
         '''Return the name of the "objects" used to name thresholding measurements

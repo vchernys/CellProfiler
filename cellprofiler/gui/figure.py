@@ -290,7 +290,7 @@ class Figure(wx.Frame):
         self.remove_menu = []
         self.figure = matplotlib.pyplot.Figure()
         self.panel = matplotlib.backends.backend_wxagg.FigureCanvasWxAgg(self, -1, self.figure)
-        self.__gridspec = None
+        self.gridspec = None
         if secret_panel_class is None:
             secret_panel_class = wx.Panel
         self.secret_panel = secret_panel_class(self)
@@ -1074,15 +1074,15 @@ class Figure(wx.Frame):
                 on_slider(None)
 
     def set_grids(self, shape):
-        self.__gridspec = matplotlib.gridspec.GridSpec(*shape[::-1])
+        self.gridspec = matplotlib.gridspec.GridSpec(*shape[::-1])
 
     def gridshow(self, x, y, image, cmap='gray'):
-        gx, gy = self.__gridspec.get_geometry()
+        gx, gy = self.gridspec.get_geometry()
 
         gridspec = matplotlib.gridspec.GridSpecFromSubplotSpec(
             3,
             3,
-            subplot_spec=self.__gridspec[gy * y + x],
+            subplot_spec=self.gridspec[gy * y + x],
             wspace=0.1,
             hspace=0.1
         )
@@ -1550,7 +1550,8 @@ class Figure(wx.Frame):
                       col_labels=None,
                       row_labels=None,
                       n_cols=1,
-                      n_rows=1, **kwargs):
+                      n_rows=1,
+                      dimensions=2, **kwargs):
         """Put a table into a subplot
 
         x,y - subplot's column and row
@@ -1562,8 +1563,11 @@ class Figure(wx.Frame):
 
         **kwargs - for backwards compatibility, old argument values
         """
+        if dimensions == 2:
+            nx, ny = self.subplots.shape
+        else:
+            ny, nx = self.gridspec.get_geometry()
 
-        nx, ny = self.subplots.shape
         xstart = float(x) / float(nx)
         ystart = float(y) / float(ny)
         width = float(n_cols) / float(nx)
