@@ -118,6 +118,8 @@ TS_BINARY_IMAGE = "Binary image"
 '''Threshold operation = measurement - use a measurement value as the threshold'''
 TM_MEASUREMENT = "Measurement"
 
+TM_MXE = "Minimum cross entropy"
+
 TS_ALL = [TS_GLOBAL, TS_ADAPTIVE]
 
 '''The legacy choice of object in per-object measurements
@@ -240,13 +242,13 @@ class Identify(cellprofiler.module.Module):
         self.global_operation = cellprofiler.setting.Choice(
             "Thresholding method",
             [
-                centrosome.threshold.TM_MCT,
+                TM_MXE,
                 centrosome.threshold.TM_OTSU,
                 centrosome.threshold.TM_ROBUST_BACKGROUND,
                 TM_MANUAL,
                 TM_MEASUREMENT,
             ],
-            value=centrosome.threshold.TM_MCT,
+            value=TM_MXE,
             doc="""
             <i>(Used only for the {TS_GLOBAL} thresholding scope.)</i><br>
             The intensity threshold affects the decision of whether each pixel will be considered foreground
@@ -305,18 +307,7 @@ class Identify(cellprofiler.module.Module):
                     </dl>
                 </li>
                 <li>
-                    <i>Maximum correlation thresholding ({TM_MCT}):</i> This method computes the maximum
-                    correlation between the binary mask created by thresholding and the thresholded image and
-                    is somewhat similar mathematically to <i>{TM_OTSU}</i>.
-                    <dl>
-                        <dd><img src="memory:{PROTIP_RECOMEND_ICON}">&nbsp; The authors of this method claim
-                        superior results when thresholding images of neurites and other images that have sparse
-                        foreground densities.</dd>
-                    </dl>
-                    <dl>
-                        <dd><img src="memory:{TECH_NOTE_ICON}">&nbsp; This is an implementation of the method
-                        described in Padmanabhan <i>et al</i>, 2010.</dd>
-                    </dl>
+                    <i>{TM_MXE} thresholding:</i>
                 </li>
                 <li>
                     <i>{TS_MANUAL}:</i> Enter a single value between zero and one that applies to all cycles
@@ -348,17 +339,13 @@ class Identify(cellprofiler.module.Module):
                 performance evaluation." <i>Journal of Electronic Imaging</i>, 13(1), 146-165. (<a href=
                 "http://dx.doi.org/10.1117/1.1631315">link</a>)
                 </li>
-                <li>Padmanabhan K, Eddy WF, Crowley JC (2010) "A novel algorithm for optimal image thresholding
-                of biological data" <i>Journal of Neuroscience Methods</i> 193, 380-384. (<a href=
-                "http://dx.doi.org/10.1016/j.jneumeth.2010.08.031">link</a>)
-                </li>
             </ul>
             """.format(**{
                 "HELP_ON_PIXEL_INTENSITIES": cellprofiler.gui.help.HELP_ON_PIXEL_INTENSITIES,
                 "PROTIP_AVOID_ICON": PROTIP_AVOID_ICON,
                 "PROTIP_RECOMEND_ICON": PROTIP_RECOMEND_ICON,
                 "TECH_NOTE_ICON": TECH_NOTE_ICON,
-                "TM_MCT": centrosome.threshold.TM_MCT,
+                "TM_MXE": TM_MXE,
                 "TM_OTSU": centrosome.threshold.TM_OTSU,
                 "TM_ROBUST_BACKGROUND": centrosome.threshold.TM_ROBUST_BACKGROUND,
                 "TS_GLOBAL": TS_GLOBAL,
@@ -772,6 +759,9 @@ class Identify(cellprofiler.module.Module):
 
                 setting_values[1] = TS_GLOBAL
 
+            if setting_values[2] == centrosome.threshold.TM_MCT:
+                setting_values[2] = TM_MXE
+
             version = 4
 
         setting_values[0] = version
@@ -832,8 +822,8 @@ class Identify(cellprofiler.module.Module):
             local_threshold = global_threshold = self.manual_threshold.value
         elif self.threshold_method == TM_MEASUREMENT:
             local_threshold, global_threshold = self.get_measurement_threshold(workspace.measurements)
-        elif self.threshold_method == centrosome.threshold.TM_MCT:
-            local_threshold, global_threshold = self.get_mct_threshold(image)
+        elif self.threshold_method == TM_MXE:
+            local_threshold, global_threshold = self.get_mxe_threshold(image)
         elif self.threshold_method == centrosome.threshold.TM_OTSU:
             local_threshold, global_threshold = self.get_otsu_threshold(image)
         else:
@@ -879,15 +869,9 @@ class Identify(cellprofiler.module.Module):
         return binary_image
 
     def get_automatic_threshold(self, image):
-        return centrosome.threshold.get_threshold(
-            centrosome.threshold.TM_MCT,
-            TS_GLOBAL,
-            image.pixel_data,
-            mask=image.mask,
-            threshold_range_min=0.0,
-            threshold_range_max=1.0,
-            threshold_correction_factor=1.0
-        )
+        thresh = cellprofiler.thresholding.minimum_cross_entropy(image)
+
+        return thresh, thresh
 
     def get_measurement_threshold(self, measurements):
         # Thresholds are stored as single element arrays.  Cast to float to extract the value.
@@ -903,20 +887,14 @@ class Identify(cellprofiler.module.Module):
 
         return value, value
 
-    def get_mct_threshold(self, image):
-        kwparams = {
-            "threshold_range_min": self.threshold_range.min,
-            "threshold_range_max": self.threshold_range.max,
-            "threshold_correction_factor": self.threshold_correction_factor.value
-        }
+    def get_mxe_threshold(self, image):
+        local_threshold = global_threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
 
-        return centrosome.threshold.get_threshold(
-            self.global_operation.value,
-            self.threshold_modifier,
-            image.pixel_data,
-            mask=image.mask,
-            **kwparams
-        )
+        local_threshold *= self.threshold_correction_factor.value
+
+        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+
+        return local_threshold, global_threshold
 
     def get_otsu_threshold(self, image):
         if self.two_class_otsu.value == O_TWO_CLASS:

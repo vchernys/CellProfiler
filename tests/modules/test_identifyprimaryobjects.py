@@ -298,7 +298,7 @@ class TestIdentifyPrimaryObjects(unittest.TestCase):
         x.threshold_range.max = 1
         x.threshold_correction_factor.value = .95
         x.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        x.global_operation.value = centrosome.threshold.TM_MCT
+        x.global_operation.value = cellprofiler.modules.identify.TM_MXE
         x.exclude_size.value = False
         x.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_NONE
         img = two_cell_image()
@@ -365,6 +365,7 @@ class TestIdentifyPrimaryObjects(unittest.TestCase):
 
     def test_02_05_dont_fill_holes(self):
         x = cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects()
+        x.use_advanced.value = True
         x.object_name.value = "my_object"
         x.image_name.value = "my_image"
         x.threshold_range.min = .7
@@ -1627,7 +1628,7 @@ IdentifyPrimaryObjects:[module_num:11|svn_version:\'Unknown\'|variable_revision_
         self.assertEqual(module.fill_holes, cellprofiler.modules.identifyprimaryobjects.FH_NEVER)
         self.assertEqual(module.limit_choice, cellprofiler.modules.identifyprimaryobjects.LIMIT_ERASE)
         self.assertEqual(module.threshold_scope, cellprofiler.modules.identify.TS_GLOBAL)
-        self.assertEqual(module.global_operation.value, centrosome.threshold.TM_MCT)
+        self.assertEqual(module.global_operation.value, cellprofiler.modules.identify.TM_MXE)
         self.assertEqual(module.two_class_otsu, cellprofiler.modules.identify.O_THREE_CLASS)
         self.assertEqual(module.assign_middle_to_foreground, cellprofiler.modules.identify.O_BACKGROUND)
         self.assertTrue(module.use_advanced.value)
@@ -2514,7 +2515,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         # MCT on this image is zero, so set the threshold at .225
         # with the threshold minimum (manual = no smoothing)
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.global_operation.value = centrosome.threshold.TM_MCT
+        module.global_operation.value = cellprofiler.modules.identify.TM_MXE
         module.threshold_range.min = .225
         module.run(workspace)
         labels = workspace.object_set.get_objects(OBJECTS_NAME).segmented
@@ -2542,7 +2543,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_NONE
         module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_NONE
         module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.global_operation.value = centrosome.threshold.TM_MCT
+        module.global_operation.value = cellprofiler.modules.identify.TM_MXE
         module.threshold_range.min = .125
         module.threshold_smoothing_scale.value = 3
         module.run(workspace)
