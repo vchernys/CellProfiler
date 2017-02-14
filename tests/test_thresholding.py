@@ -166,15 +166,6 @@ def test_otsu3_volume():
     assert upper <= 1.0
 
 
-def test_local_otsu3_even_block_size():
-    image = cellprofiler.image.Image(numpy.zeros((10, 10), dtype=numpy.float32))
-
-    with pytest.raises(AssertionError) as error:
-        cellprofiler.thresholding.local_otsu3(image, 2)
-
-    assert "block_size must be odd, got 2" in str(error.value)
-
-
 def test_local_otsu3_zeros():
     image = cellprofiler.image.Image(numpy.zeros((10, 10), dtype=numpy.float32))
 
@@ -225,6 +216,10 @@ def test_local_otsu3_volume():
     image = cellprofiler.image.Image(data, dimensions=3)
 
     lower, upper = cellprofiler.thresholding.local_otsu3(image, 3)
+
+    assert lower.ndim == 3
+
+    assert upper.ndim == 3
 
     assert numpy.all(lower >= 0.0)
 

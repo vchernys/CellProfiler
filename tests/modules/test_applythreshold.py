@@ -361,7 +361,7 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         self.assertEqual(module.thresholding_measurement, "None")
         self.assertEqual(module.two_class_otsu, cellprofiler.modules.identify.O_TWO_CLASS)
         self.assertEqual(module.assign_middle_to_foreground, cellprofiler.modules.identify.O_FOREGROUND)
-        self.assertEqual(module.adaptive_window_size, 51)
+        self.assertEqual(module.adaptive_window_size, 50)
 
     def test_04_01_binary_manual(self):
         '''Test a binary threshold with manual threshold value'''

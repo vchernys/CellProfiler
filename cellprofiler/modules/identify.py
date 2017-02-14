@@ -565,12 +565,12 @@ class Identify(cellprofiler.module.Module):
             })
         )
 
-        self.adaptive_window_size = cellprofiler.setting.OddInteger(
+        self.adaptive_window_size = cellprofiler.setting.Integer(
             "Size of adaptive window",
-            51,
+            50,
             doc="""
             Enter the window for the adaptive method. For example, you may want to use a multiple of the
-            largest expected object size. <i>Size must be odd.</i>
+            largest expected object size.
             """
         )
 
@@ -744,11 +744,6 @@ class Identify(cellprofiler.module.Module):
 
         if version == 3:
             if setting_values[1] == TS_ADAPTIVE:
-                window_size = int(setting_values[10])
-
-                if window_size % 2 == 0:
-                    setting_values[10] = window_size + 1
-
                 setting_values += [setting_values[2]]
 
             if setting_values[2] in [centrosome.threshold.TM_MCT, centrosome.threshold.TM_ROBUST_BACKGROUND]:
@@ -903,7 +898,7 @@ class Identify(cellprofiler.module.Module):
 
         local_threshold[local_threshold > threshold_range_max] = threshold_range_max
 
-        return local_threshold
+        return local_threshold, global_threshold
 
     def get_otsu_threshold(self, image):
         if self.two_class_otsu.value == O_TWO_CLASS:
