@@ -997,15 +997,10 @@ class Identify(cellprofiler.module.Module):
                             self.upper_outlier_fraction)
 
     @property
-    def threshold_modifier(self):
-        """The threshold algorithm modifier"""
-        if self.threshold_scope.value in (TS_GLOBAL, TM_MANUAL, TM_MEASUREMENT):
-            return centrosome.threshold.TM_GLOBAL
-
-        return centrosome.threshold.TM_ADAPTIVE
-
-    @property
     def threshold_method(self):
+        if hasattr(self, "use_advanced") and not self.use_advanced.value:
+            return TM_MXE
+
         if self.threshold_scope.value == TS_GLOBAL:
             return self.global_operation.value
 

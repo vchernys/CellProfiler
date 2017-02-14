@@ -949,7 +949,7 @@ IdentifyPrimaryObjects:[module_num:1|svn_version:\'9633\'|variable_revision_numb
         module = pipeline.module(1)
         self.assertTrue(isinstance(module, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects))
         self.assertTrue(module.global_operation.value, centrosome.threshold.TM_OTSU)
-        self.assertTrue(module.threshold_modifier, centrosome.threshold.TM_GLOBAL)
+        self.assertTrue(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
         self.assertEqual(module.object_name.value, "Nuclei")
         self.assertEqual(module.image_name.value, "Do not use")
         self.assertTrue(module.exclude_size.value)
@@ -1001,8 +1001,8 @@ IdentifyPrimaryObjects:[module_num:1|svn_version:\'9633\'|variable_revision_numb
         self.assertEqual(len(pipeline.modules()), 1)
         module = pipeline.module(1)
         self.assertTrue(isinstance(module, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects))
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
         self.assertEqual(module.global_operation.value, centrosome.threshold.TM_OTSU)
-        self.assertEqual(module.threshold_modifier, centrosome.threshold.TM_GLOBAL)
         self.assertTrue(module.image_name == 'None')
 
     def test_04_03_load_v3(self):
@@ -1037,7 +1037,7 @@ IdentifyPrimaryObjects:[module_num:1|svn_version:\'9633\'|variable_revision_numb
         module = pipeline.modules()[1]
         self.assertTrue(isinstance(module, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects))
         self.assertTrue(module.global_operation.value, centrosome.threshold.TM_OTSU)
-        self.assertTrue(module.threshold_modifier, centrosome.threshold.TM_GLOBAL)
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
         self.assertEqual(module.two_class_otsu.value, cellprofiler.modules.identify.O_THREE_CLASS)
         self.assertEqual(module.assign_middle_to_foreground.value,
                          cellprofiler.modules.identify.O_FOREGROUND)
@@ -1075,7 +1075,7 @@ IdentifyPrimaryObjects:[module_num:1|svn_version:\'9633\'|variable_revision_numb
         module = pipeline.modules()[1]
         self.assertTrue(isinstance(module, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects))
         self.assertTrue(module.global_operation.value, centrosome.threshold.TM_OTSU)
-        self.assertTrue(module.threshold_modifier, centrosome.threshold.TM_GLOBAL)
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
         self.assertEqual(module.two_class_otsu.value, cellprofiler.modules.identify.O_THREE_CLASS)
         self.assertEqual(module.assign_middle_to_foreground.value,
                          cellprofiler.modules.identify.O_FOREGROUND)
@@ -1188,7 +1188,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'8981\'|variable_revision_numb
         self.assertTrue(module.exclude_size)
         self.assertTrue(module.exclude_border_objects)
         self.assertEqual(module.global_operation.value, centrosome.threshold.TM_ROBUST_BACKGROUND)
-        self.assertEqual(module.threshold_modifier, centrosome.threshold.TM_GLOBAL)
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_GLOBAL)
         self.assertAlmostEqual(module.threshold_correction_factor.value, 1.2)
         self.assertAlmostEqual(module.threshold_range.min, 0.1)
         self.assertAlmostEqual(module.threshold_range.max, 0.6)
@@ -1215,7 +1215,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'8981\'|variable_revision_numb
         self.assertFalse(module.exclude_size)
         self.assertFalse(module.exclude_border_objects)
         self.assertEqual(module.global_operation.value, centrosome.threshold.TM_OTSU)
-        self.assertEqual(module.threshold_modifier, centrosome.threshold.TM_ADAPTIVE)
+        self.assertEqual(module.threshold_scope.value, cellprofiler.modules.identify.TS_ADAPTIVE)
         self.assertAlmostEqual(module.threshold_correction_factor.value, 1.2)
         self.assertAlmostEqual(module.threshold_range.min, 0.1)
         self.assertAlmostEqual(module.threshold_range.max, 0.6)
