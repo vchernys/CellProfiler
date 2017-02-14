@@ -437,14 +437,16 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         numpy.random.seed(0)
         image = numpy.random.uniform(size=(20, 20))
         workspace, module = self.make_workspace(image)
-        module.threshold_scope.value = centrosome.threshold.TM_MANUAL
+        module.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
+        module.global_operation.value = cellprofiler.modules.identify.TM_MANUAL
         module.manual_threshold.value = .5
         module.run(workspace)
 
         module2 = cellprofiler.modules.applythreshold.ApplyThreshold()
         module2.image_name.value = OUTPUT_IMAGE_NAME
         module2.thresholded_image_name.value = OUTPUT_IMAGE_NAME + 'new'
-        module2.threshold_scope.value = centrosome.threshold.TM_MEASUREMENT
+        module2.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
+        module2.global_operation.value = cellprofiler.modules.identify.TM_MEASUREMENT
         module2.thresholding_measurement.value = 'Threshold_FinalThreshold_' + OUTPUT_IMAGE_NAME
         module2.run(workspace)
 

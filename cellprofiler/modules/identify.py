@@ -816,18 +816,7 @@ class Identify(cellprofiler.module.Module):
     def threshold_image(self, image_name, workspace, wants_local_threshold=False, automatic=False):
         image = workspace.image_set.get_image(image_name, must_be_grayscale=True)
 
-        if automatic:
-            local_threshold, global_threshold = self.get_automatic_threshold(image)
-        elif self.threshold_method == TM_MANUAL:
-            local_threshold = global_threshold = self.manual_threshold.value
-        elif self.threshold_method == TM_MEASUREMENT:
-            local_threshold, global_threshold = self.get_measurement_threshold(workspace.measurements)
-        elif self.threshold_method == TM_MXE:
-            local_threshold, global_threshold = self.get_mxe_threshold(image)
-        elif self.threshold_method == centrosome.threshold.TM_OTSU:
-            local_threshold, global_threshold = self.get_otsu_threshold(image)
-        else:
-            local_threshold, global_threshold = self.get_robust_background_threshold(image)
+        local_threshold, global_threshold = self.get_threshold(image, workspace.measurements, automatic)
 
         img = image.pixel_data
 
@@ -868,33 +857,57 @@ class Identify(cellprofiler.module.Module):
 
         return binary_image
 
-    def get_automatic_threshold(self, image):
-        thresh = cellprofiler.thresholding.minimum_cross_entropy(image)
+    def get_threshold(self, image, measurements, automatic):
+        if automatic:
+            threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
 
-        return thresh, thresh
+            return threshold, threshold
 
-    def get_measurement_threshold(self, measurements):
-        # Thresholds are stored as single element arrays.  Cast to float to extract the value.
-        value = float(measurements.get_current_image_measurement(self.thresholding_measurement.value))
+        if self.threshold_method == TM_MANUAL:
+            return self.manual_threshold.value, self.manual_threshold.value
 
-        value *= self.threshold_correction_factor.value
-
-        if self.threshold_range.min is not None:
-            value = max(value, self.threshold_range.min)
-
-        if self.threshold_range.max is not None:
-            value = min(value, self.threshold_range.max)
-
-        return value, value
-
-    def get_mxe_threshold(self, image):
-        local_threshold = global_threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+        if self.threshold_method == TM_MEASUREMENT:
+            # Thresholds are stored as single element arrays.  Cast to float to extract the value.
+            local_threshold = global_threshold = float(
+                measurements.get_current_image_measurement(self.thresholding_measurement.value)
+            )
+        elif self.threshold_method == TM_MXE:
+            local_threshold = global_threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
+        elif self.threshold_method == centrosome.threshold.TM_OTSU:
+            local_threshold, global_threshold = self.get_otsu_threshold(image)
+        else:
+            local_threshold = global_threshold = cellprofiler.thresholding.robust_background(
+                image.pixel_data,
+                image.mask,
+                lower=self.lower_outlier_fraction.value,
+                upper=self.upper_outlier_fraction.value,
+                average_method=self.averaging_method.value.lower(),
+                variance_method="mad" if self.variance_method.value == RB_MAD else "sd",
+                n_deviations=self.number_of_deviations.value
+            )
 
         local_threshold *= self.threshold_correction_factor.value
 
-        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+        if self.threshold_scope.value == TS_GLOBAL:
+            local_threshold = max(local_threshold, self.threshold_range.min)
 
-        return local_threshold, global_threshold
+            local_threshold = min(local_threshold, self.threshold_range.max)
+
+            return local_threshold, global_threshold
+
+        # Constrain the local threshold to be within [0.7, 1.5] * global_threshold. It's for the pretty common case
+        # where you have regions of the image with no cells whatsoever that are as large as whatever window you're
+        # using. Without a lower bound, you start having crazy threshold s that detect noise blobs. And same for very
+        # crowded areas where there is zero background in the window. You want the foreground to be all detected.
+        threshold_range_min = max(self.threshold_range.min, global_threshold * 0.7)
+
+        threshold_range_max = min(self.threshold_range.max, global_threshold * 1.5)
+
+        local_threshold[local_threshold < threshold_range_min] = threshold_range_min
+
+        local_threshold[local_threshold > threshold_range_max] = threshold_range_max
+
+        return local_threshold
 
     def get_otsu_threshold(self, image):
         if self.two_class_otsu.value == O_TWO_CLASS:
@@ -902,58 +915,21 @@ class Identify(cellprofiler.module.Module):
 
             if self.threshold_scope.value == TS_ADAPTIVE:
                 local_threshold = cellprofiler.thresholding.local_otsu(image, self.adaptive_window_size.value)
-        else:
-            lower, upper = cellprofiler.thresholding.otsu3(image)
 
-            global_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
+            return local_threshold, global_threshold
 
-            local_threshold = global_threshold
+        lower, upper = cellprofiler.thresholding.otsu3(image)
 
-            if self.threshold_scope.value == TS_ADAPTIVE:
-                lower, upper = cellprofiler.thresholding.local_otsu3(image, self.adaptive_window_size.value)
+        global_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
 
-                local_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
+        local_threshold = global_threshold
 
-        local_threshold *= self.threshold_correction_factor.value
+        if self.threshold_scope.value == TS_ADAPTIVE:
+            lower, upper = cellprofiler.thresholding.local_otsu3(image, self.adaptive_window_size.value)
 
-        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
+            local_threshold = lower if self.assign_middle_to_foreground.value == O_FOREGROUND else upper
 
         return local_threshold, global_threshold
-
-    def get_robust_background_threshold(self, image):
-        local_threshold = global_threshold = cellprofiler.thresholding.robust_background(
-            image.pixel_data,
-            image.mask,
-            lower=self.lower_outlier_fraction.value,
-            upper=self.upper_outlier_fraction.value,
-            average_method=self.averaging_method.value.lower(),
-            variance_method="mad" if self.variance_method.value == RB_MAD else "sd",
-            n_deviations=self.number_of_deviations.value
-        )
-
-        local_threshold *= self.threshold_correction_factor.value
-
-        local_threshold = self.constrain_threshold(local_threshold, global_threshold)
-
-        return local_threshold, global_threshold
-
-    def constrain_threshold(self, local_threshold, global_threshold):
-        if isinstance(local_threshold, numpy.ndarray):
-            threshold_range_min = max(self.threshold_range.min, global_threshold * 0.7)
-
-            threshold_range_max = min(self.threshold_range.max, global_threshold * 1.5)
-
-            local_threshold[local_threshold < threshold_range_min] = threshold_range_min
-
-            local_threshold[local_threshold > threshold_range_max] = threshold_range_max
-
-            return local_threshold
-
-        local_threshold = max(local_threshold, self.threshold_range.min)
-
-        local_threshold = min(local_threshold, self.threshold_range.max)
-
-        return local_threshold
 
     def get_measurement_objects_name(self):
         '''Return the name of the measurement objects
