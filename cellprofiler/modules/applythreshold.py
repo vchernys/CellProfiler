@@ -68,7 +68,7 @@ class ApplyThreshold(identify.Identify):
     def run(self, workspace):
         input = workspace.image_set.get_image(self.image_name.value, must_be_grayscale=True)
 
-        binary_image, local_thresh = self.threshold_image(self.image_name.value, workspace, wants_local_threshold=True)
+        binary_image = self.threshold_image(self.image_name.value, workspace)
 
         pixels = binary_image & input.mask
 

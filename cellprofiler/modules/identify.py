@@ -813,7 +813,7 @@ class Identify(cellprofiler.module.Module):
 
         return visible_settings
 
-    def threshold_image(self, image_name, workspace, wants_local_threshold=False, automatic=False):
+    def threshold_image(self, image_name, workspace, automatic=False):
         image = workspace.image_set.get_image(image_name, must_be_grayscale=True)
 
         local_threshold, global_threshold = self.get_threshold(image, workspace.measurements, automatic)
@@ -852,12 +852,9 @@ class Identify(cellprofiler.module.Module):
             if hasattr(workspace.display_data, "statistics"):
                 workspace.display_data.statistics.append(["Threshold", "%0.3g" % global_threshold])
 
-        if wants_local_threshold:
-            return binary_image, local_threshold
-
         return binary_image
 
-    def get_threshold(self, image, measurements, automatic):
+    def get_threshold(self, image, measurements, automatic=False):
         if automatic:
             threshold = cellprofiler.thresholding.minimum_cross_entropy(image)
 

@@ -2161,7 +2161,7 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         x.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         x.global_operation.value = cellprofiler.modules.identify.TM_MANUAL
         x.manual_threshold.value = .5
-        binary_image, threshold = x.threshold_image(IMAGE_NAME, workspace, wants_local_threshold=True)
+        threshold, _ = x.get_threshold(workspace.image_set.get_image(IMAGE_NAME), workspace.measurements)
         self.assertTrue(threshold == .5)
 
     def test_16_01_get_measurement_columns(self):
