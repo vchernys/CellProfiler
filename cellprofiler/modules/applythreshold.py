@@ -70,36 +70,60 @@ class ApplyThreshold(identify.Identify):
 
         binary_image = self.threshold_image(self.image_name.value, workspace)
 
-        pixels = binary_image & input.mask
+        dimensions = input.dimensions
 
-        output = cellprofiler.image.Image(pixels, parent_image=input)
+        output = cellprofiler.image.Image(
+            binary_image,
+            parent_image=input,
+            dimensions=dimensions
+        )
 
         workspace.image_set.add(self.thresholded_image_name.value, output)
 
         if self.show_window:
+            workspace.display_data.dimensions = dimensions
+
             workspace.display_data.input_pixel_data = input.pixel_data
+
             workspace.display_data.output_pixel_data = output.pixel_data
+
             statistics = workspace.display_data.statistics = []
+
             workspace.display_data.col_labels = ("Feature", "Value")
 
             for column in self.get_measurement_columns(workspace.pipeline):
                 value = workspace.measurements.get_current_image_measurement(column[1])
+
                 statistics += [(column[1].split('_')[1], str(value))]
 
     def display(self, workspace, figure):
-        figure.set_subplots((3, 1))
+        dimensions = workspace.display_data.dimensions
 
-        figure.subplot_imshow_grayscale(0, 0, workspace.display_data.input_pixel_data,
-                                        title="Original image: %s" %
-                                              self.image_name.value)
+        # figure.set_subplots((3, 1), dimensions=dimensions)
 
-        figure.subplot_imshow_grayscale(1, 0, workspace.display_data.output_pixel_data,
-                                        title="Thresholded image: %s" %
-                                              self.thresholded_image_name.value,
-                                        sharexy=figure.subplot(0, 0))
-        figure.subplot_table(
-                2, 0, workspace.display_data.statistics,
-                workspace.display_data.col_labels)
+        figure.set_subplots((2, 1), dimensions=dimensions)
+
+        figure.subplot_imshow_grayscale(
+            0,
+            0,
+            workspace.display_data.input_pixel_data,
+            title=u"Original image: {0:s}".format(self.image_name.value),
+            dimensions=dimensions
+        )
+
+        figure.subplot_imshow_grayscale(
+            1,
+            0, workspace.display_data.output_pixel_data,
+            title="Thresholded image: %s" % self.thresholded_image_name.value,
+            dimensions=dimensions
+        )
+
+        # figure.subplot_table(
+        #     2,
+        #     0,
+        #     workspace.display_data.statistics,
+        #     workspace.display_data.col_labels
+        # )
 
     def get_measurement_objects_name(self):
         '''Return the name of the "objects" used to name thresholding measurements
