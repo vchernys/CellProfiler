@@ -984,10 +984,10 @@ class Identify(cellprofiler.module.Module):
         if not hasattr(self, "threshold_scope"):
             # derived class does not have thresholding settings
             return
-        if self.threshold_scope in (TS_ADAPTIVE, TS_GLOBAL):
+
+        if not self.use_automatic.value and self.threshold_scope == TS_GLOBAL:
             if self.global_operation.value == centrosome.threshold.TM_ROBUST_BACKGROUND:
-                if self.lower_outlier_fraction.value + \
-                        self.upper_outlier_fraction.value >= 1:
+                if self.lower_outlier_fraction.value + self.upper_outlier_fraction.value >= 1:
                     raise cellprofiler.setting.ValidationError(
                             ("The sum of the lower robust background outlier "
                              "fraction (%f) and the upper fraction (%f) must "
