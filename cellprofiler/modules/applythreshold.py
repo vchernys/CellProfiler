@@ -38,7 +38,7 @@ class ApplyThreshold(identify.Identify):
 
         self.thresholded_image_name = cellprofiler.setting.ImageNameProvider(
             "Name the output image",
-            "ThreshBlue",
+            "ApplyThreshold",
             doc="Enter a name for the thresholded image."
         )
 
@@ -142,12 +142,9 @@ class ApplyThreshold(identify.Identify):
         return self.get_threshold_measurements(pipeline, object_name, category)
 
     def get_measurement_images(self, pipeline, object_name, category, measurement):
-        return self.get_threshold_measurement_objects(
-                pipeline, object_name, category, measurement)
+        return self.get_threshold_measurement_objects(pipeline, object_name, category, measurement)
 
-    def upgrade_settings(self, setting_values,
-                         variable_revision_number, module_name,
-                         from_matlab):
+    def upgrade_settings(self, setting_values, variable_revision_number, module_name, from_matlab):
         if from_matlab and variable_revision_number < 4:
             raise NotImplementedError, ("TODO: Handle Matlab CP pipelines for "
                                         "ApplyThreshold with revision < 4")
