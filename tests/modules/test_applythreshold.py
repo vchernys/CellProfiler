@@ -504,3 +504,37 @@ ApplyThreshold:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:8|
         m = workspace.measurements
         m_threshold = m[cellprofiler.measurement.IMAGE, cellprofiler.modules.identify.FF_ORIG_THRESHOLD % module.get_measurement_objects_name()]
         self.assertAlmostEqual(m_threshold, threshold)
+
+    def test_volume(self):
+        numpy.random.seed(73)
+
+        data = numpy.random.rand(64, 256, 256)
+
+        image = cellprofiler.image.Image(data, dimensions=3)
+
+        image_set_list = cellprofiler.image.ImageSetList()
+
+        image_set = image_set_list.get_image_set(0)
+
+        image_set.add(INPUT_IMAGE_NAME, image)
+
+        module = cellprofiler.modules.applythreshold.ApplyThreshold()
+
+        module.image_name.value = INPUT_IMAGE_NAME
+
+        module.thresholded_image_name.value = OUTPUT_IMAGE_NAME
+
+        workspace = cellprofiler.workspace.Workspace(
+            cellprofiler.pipeline.Pipeline(),
+            module,
+            image_set,
+            cellprofiler.object.ObjectSet(),
+            cellprofiler.measurement.Measurements(),
+            image_set_list
+        )
+
+        module.run(workspace)
+
+        output_image = image_set.get_image(OUTPUT_IMAGE_NAME)
+
+        assert output_image.dimensions == 3
