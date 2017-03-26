@@ -43,9 +43,27 @@ class Opening(cellprofiler.module.ImageProcessing):
     def run(self, workspace):
         x = workspace.image_set.get_image(self.x_name.value)
 
-        if x.pixel_data.dtype == numpy.bool:
+        if self.structuring_element.value.ndim == 2 and x.volumetric:
+            self.function = planewise_opening
+        elif x.pixel_data.dtype == numpy.bool:
             self.function = skimage.morphology.binary_opening
         else:
             self.function = skimage.morphology.opening
 
         super(Opening, self).run(workspace)
+
+
+def planewise_opening(data, selem):
+    if data.dtype == numpy.bool:
+        function = skimage.morphology.binary_opening
+
+        opened = numpy.zeros_like(data, dtype=numpy.bool)
+    else:
+        function = skimage.morphology.opening
+
+        opened = numpy.zeros_like(data)
+
+    for index, plane in enumerate(data):
+        opened[index] = function(plane, selem)
+
+    return opened
