@@ -110,6 +110,8 @@ class Watershed(cellprofiler.module.ImageSegmentation):
 
         dimensions = x.dimensions
 
+        spacing = x.spacing
+
         x_data = x.pixel_data
 
         if self.operation.value == "Distance":
@@ -125,13 +127,14 @@ class Watershed(cellprofiler.module.ImageSegmentation):
             surface = distance.max() - distance
 
             if x.volumetric:
-                footprint = numpy.ones((self.connectivity.value, self.connectivity.value, self.connectivity.value))
+                footprint = numpy.ones((self.connectivity.value * numpy.divide(spacing[1], spacing)).astype(numpy.uint8))
             else:
                 footprint = numpy.ones((self.connectivity.value, self.connectivity.value))
 
             peaks = mahotas.regmax(distance, footprint)
 
             if x.volumetric:
+                # markers, _ = mahotas.label(peaks, numpy.ones((16 * numpy.divide(spacing[1], spacing)).astype(numpy.uint8)))
                 markers, _ = mahotas.label(peaks, numpy.ones((16, 16, 16)))
             else:
                 markers, _ = mahotas.label(peaks, numpy.ones((16, 16)))
