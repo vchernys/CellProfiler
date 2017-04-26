@@ -903,7 +903,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                 statistics.append(["Threshold", "%0.3g" % global_threshold])
                 if self.basic or self.unclump_method != UN_NONE:
                     statistics.append(["Declumping smoothing filter size",
-                                       "%.1f" % (self.calc_smoothing_filter_size())])
+                                       "%.1f" % (self._smoothing_filter_size())])
                     statistics.append(["Maxima suppression size",
                                        "%.1f" % self._maxima_suppression_size()])
             workspace.display_data.image = image.pixel_data
@@ -1025,7 +1025,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
         if self.basic or self.unclump_method.value == UN_INTENSITY:
             declumping_image = image
 
-            filter_size = self.calc_smoothing_filter_size()
+            filter_size = self._smoothing_filter_size()
 
             if filter_size > 0:
                 sigma = filter_size / 2.35
@@ -1159,7 +1159,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                     [[x[1]] for x in workspace.display_data.statistics],
                     row_labels=[x[0] for x in workspace.display_data.statistics])
 
-    def calc_smoothing_filter_size(self):
+    def _smoothing_filter_size(self):
         """Return the size of the smoothing filter, calculating it if in automatic mode"""
         if self.automatic_smoothing.value:
             return 2.35 * self.size_range.min / 3.5
