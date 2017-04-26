@@ -1084,24 +1084,13 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
         touching the border of the mask.
         """
         if self.exclude_border_objects.value:
-            border_labels = list(labeled_image[0, :])
-            border_labels.extend(labeled_image[:, 0])
-            border_labels.extend(labeled_image[labeled_image.shape[0] - 1, :])
-            border_labels.extend(labeled_image[:, labeled_image.shape[1] - 1])
-            border_labels = numpy.array(border_labels)
-            #
-            # the following histogram has a value > 0 for any object
-            # with a border pixel
-            #
-            histogram = scipy.sparse.coo_matrix((numpy.ones(border_labels.shape),
-                                                 (border_labels,
-                                                  numpy.zeros(border_labels.shape))),
-                                                shape=(numpy.max(labeled_image) + 1, 1)).todense()
-            histogram = numpy.array(histogram).flatten()
-            if any(histogram[1:] > 0):
-                histogram_image = histogram[labeled_image]
-                labeled_image[histogram_image > 0] = 0
-            elif image.has_mask:
+            interior_pixels = skimage.morphology.binary_erosion(numpy.ones_like(labeled_image))
+
+            border_pixels = numpy.logical_not(interior_pixels)
+
+            border_labels = set(labeled_image[border_pixels])
+
+            if border_labels == set([0]) and image.has_mask:
                 # The assumption here is that, if nothing touches the border,
                 # the mask is a large, elliptical mask that tells you where the
                 # well is. That's the way the old Matlab code works and it's duplicated here
@@ -1109,18 +1098,16 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                 # The operation below gets the mask pixels that are on the border of the mask
                 # The erosion turns all pixels touching an edge to zero. The not of this
                 # is the border + formerly masked-out pixels.
-                mask_border = numpy.logical_not(scipy.ndimage.binary_erosion(image.mask))
-                mask_border = numpy.logical_and(mask_border, image.mask)
-                border_labels = labeled_image[mask_border]
-                border_labels = border_labels.flatten()
-                histogram = scipy.sparse.coo_matrix((numpy.ones(border_labels.shape),
-                                                     (border_labels,
-                                                      numpy.zeros(border_labels.shape))),
-                                                    shape=(numpy.max(labeled_image) + 1, 1)).todense()
-                histogram = numpy.array(histogram).flatten()
-                if any(histogram[1:] > 0):
-                    histogram_image = histogram[labeled_image]
-                    labeled_image[histogram_image > 0] = 0
+                mask = image.mask
+
+                interior_pixels = skimage.morphology.binary_erosion(mask)
+
+                border_pixels = numpy.logical_not(interior_pixels)
+
+                border_labels = set(labeled_image[border_pixels])
+
+            labeled_image[numpy.in1d(labeled_image, list(border_labels)).reshape(labeled_image.shape)] = 0
+
         return labeled_image
 
     def display(self, workspace, figure):
