@@ -993,16 +993,16 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
         if self.basic or self.watershed_method.value in [WA_INTENSITY, WA_SHAPE]:
             if self.basic or self.watershed_method.value == WA_INTENSITY:
-                watershed_image = 1.0 - data
+                watershed_image = data.max() - data
             else:
-                watershed_image = -scipy.ndimage.distance_transform_edt(binary_image > 0)
+                watershed_image = scipy.ndimage.distance_transform_edt(binary_image > 0)
 
-                watershed_image -= watershed_image.min()
+                watershed_image = watershed_image.max() - watershed_image
 
-            watershed = -skimage.morphology.watershed(
+            watershed = skimage.morphology.watershed(
                 connectivity=numpy.ones((3, 3), dtype=numpy.bool),
                 image=watershed_image,
-                markers=-markers,
+                markers=markers,
                 mask=binary_image
             )
         else:  # self.advanced and self.watershed_method.value == WA_PROPAGATE
