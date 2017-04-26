@@ -32,7 +32,8 @@ class TestIdentifyPrimaryObjects(unittest.TestCase):
 
     def make_workspace(self, image,
                        mask=None,
-                       labels=None):
+                       labels=None,
+                       dimensions=2):
         '''Make a workspace and IdentifyPrimaryObjects module
 
         image - the intensity image for thresholding
@@ -49,7 +50,7 @@ class TestIdentifyPrimaryObjects(unittest.TestCase):
         pipeline = cellprofiler.pipeline.Pipeline()
         pipeline.add_module(module)
         m = cellprofiler.measurement.Measurements()
-        cpimage = cellprofiler.image.Image(image, mask=mask)
+        cpimage = cellprofiler.image.Image(image, mask=mask, dimensions=dimensions)
         m.add(IMAGE_NAME, cpimage)
         object_set = cellprofiler.object.ObjectSet()
         if labels is not None:
@@ -2169,40 +2170,6 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
         module.apply_threshold.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
         module.apply_threshold.global_operation.value = cellprofiler.modules.applythreshold.TM_LI
         module.apply_threshold.threshold_range.min = .225
-        module.run(workspace)
-        labels = workspace.object_set.get_objects(OBJECTS_NAME).segmented
-        numpy.testing.assert_array_equal(expected, labels)
-
-    def test_20_02_threshold_smoothing_manual(self):
-        image = numpy.array([[0, 0, 0, 0, 0, 0, 0],
-                             [0, 0, 0, 0, 0, 0, 0],
-                             [0, 0, .4, .4, .4, 0, 0],
-                             [0, 0, .4, .5, .4, 0, 0],
-                             [0, 0, .4, .4, .4, 0, 0],
-                             [0, 0, 0, 0, 0, 0, 0],
-                             [0, 0, 0, 0, 0, 0, 0]])
-        expected = numpy.array([[0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0]])
-        workspace, module = self.make_workspace(image)
-        assert isinstance(module, cellprofiler.modules.identifyprimaryobjects.IdentifyPrimaryObjects)
-        module.use_advanced.value = True
-        module.size_range.min = 1
-        module.size_range.max = 4
-        module.exclude_size.value = False
-        module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_NONE
-        module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_NONE
-        module.apply_threshold.threshold_scope.value = cellprofiler.modules.identify.TS_GLOBAL
-        module.apply_threshold.global_operation.value = cellprofiler.modules.applythreshold.TM_LI
-        module.apply_threshold.threshold_range.min = .125
-        module.apply_threshold.threshold_smoothing_scale.value = 3
-        module.run(workspace)
-        labels = workspace.object_set.get_objects(OBJECTS_NAME).segmented
-        numpy.testing.assert_array_equal(expected, labels)
 
     def test_20_03_threshold_no_smoothing(self):
         image = numpy.array([[0, 0, 0, 0, 0, 0, 0],
@@ -2237,6 +2204,130 @@ IdentifyPrimaryObjects:[module_num:3|svn_version:\'Unknown\'|variable_revision_n
             module.run(workspace)
             labels = workspace.object_set.get_objects(OBJECTS_NAME).segmented
             numpy.testing.assert_array_equal(expected, labels)
+
+    def test_watershed_intensity_intensity(self):
+        resources = os.path.realpath(
+            os.path.join(os.path.dirname(__file__), "..", "resources", "identifyprimaryobjects")
+        )
+
+        data = numpy.load(os.path.join(resources, "volume.npy"))
+
+        expected = numpy.load(os.path.join(resources, "intensity_intensity.npy"))
+
+        workspace, module = self.make_workspace(data, dimensions=3)
+
+        module.use_advanced.value = True
+
+        module.size_range.min = 4
+
+        module.size_range.max = 7
+
+        module.automatic_smoothing.value = False
+
+        module.smoothing_filter_size.value = 0
+
+        module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_INTENSITY
+
+        module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_INTENSITY
+
+        module.fill_holes.value = cellprofiler.modules.identifyprimaryobjects.FH_NEVER
+
+        module.run(workspace)
+
+        numpy.testing.assert_array_equal(data, expected)
+
+    def test_watershed_intensity_shape(self):
+        resources = os.path.realpath(
+            os.path.join(os.path.dirname(__file__), "..", "resources", "identifyprimaryobjects")
+        )
+
+        data = numpy.load(os.path.join(resources, "volume.npy"))
+
+        expected = numpy.load(os.path.join(resources, "intensity_shape.npy"))
+
+        workspace, module = self.make_workspace(data, dimensions=3)
+
+        module.use_advanced.value = True
+
+        module.size_range.min = 4
+
+        module.size_range.max = 7
+
+        module.automatic_smoothing.value = False
+
+        module.smoothing_filter_size.value = 0
+
+        module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_INTENSITY
+
+        module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_SHAPE
+
+        module.fill_holes.value = cellprofiler.modules.identifyprimaryobjects.FH_NEVER
+
+        module.run(workspace)
+
+        numpy.testing.assert_array_equal(data, expected)
+
+    def test_watershed_shape_intensity(self):
+        resources = os.path.realpath(
+            os.path.join(os.path.dirname(__file__), "..", "resources", "identifyprimaryobjects")
+        )
+
+        data = numpy.load(os.path.join(resources, "volume.npy"))
+
+        expected = numpy.load(os.path.join(resources, "shape_intensity.npy"))
+
+        workspace, module = self.make_workspace(data, dimensions=3)
+
+        module.use_advanced.value = True
+
+        module.size_range.min = 4
+
+        module.size_range.max = 7
+
+        module.automatic_smoothing.value = False
+
+        module.smoothing_filter_size.value = 0
+
+        module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_SHAPE
+
+        module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_INTENSITY
+
+        module.fill_holes.value = cellprofiler.modules.identifyprimaryobjects.FH_NEVER
+
+        module.run(workspace)
+
+        numpy.testing.assert_array_equal(data, expected)
+
+    def test_watershed_shape_shape(self):
+        resources = os.path.realpath(
+            os.path.join(os.path.dirname(__file__), "..", "resources", "identifyprimaryobjects")
+        )
+
+        data = numpy.load(os.path.join(resources, "volume.npy"))
+
+        expected = numpy.load(os.path.join(resources, "shape_shape.npy"))
+
+        workspace, module = self.make_workspace(data, dimensions=3)
+
+        module.use_advanced.value = True
+
+        module.size_range.min = 4
+
+        module.size_range.max = 7
+
+        module.automatic_smoothing.value = False
+
+        module.smoothing_filter_size.value = 0
+
+        module.unclump_method.value = cellprofiler.modules.identifyprimaryobjects.UN_SHAPE
+
+        module.watershed_method.value = cellprofiler.modules.identifyprimaryobjects.WA_SHAPE
+
+        module.fill_holes.value = cellprofiler.modules.identifyprimaryobjects.FH_NEVER
+
+        module.run(workspace)
+
+        numpy.testing.assert_array_equal(data, expected)
 
 
 def add_noise(img, fraction):

@@ -999,8 +999,13 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
                 watershed_image = watershed_image.max() - watershed_image
 
+            if image.volumetric:
+                connectivity = numpy.ones((3, 3, 3), dtype=numpy.bool)
+            else:
+                connectivity = numpy.ones((3, 3), dtype=numpy.bool)
+
             watershed = skimage.morphology.watershed(
-                connectivity=numpy.ones((3, 3), dtype=numpy.bool),
+                connectivity=connectivity,
                 image=watershed_image,
                 markers=markers,
                 mask=binary_image
@@ -1043,7 +1048,12 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
             declumping_image += numpy.random.uniform(0, .001, declumping_image.shape)
 
-        footprint = skimage.morphology.square(max(1, int(self._maxima_suppression_size())))
+        maxima_suppression_size = max(1, int(self._maxima_suppression_size()))
+
+        if binary_image.ndim == 3:
+            footprint = skimage.morphology.cube(maxima_suppression_size)
+        else:
+            footprint = skimage.morphology.square(maxima_suppression_size)
 
         maxima_image = scipy.ndimage.filters.maximum_filter(declumping_image, footprint=footprint)
 
