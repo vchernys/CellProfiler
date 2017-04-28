@@ -901,9 +901,9 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                 statistics.append(["Threshold", "%0.3g" % global_threshold])
                 if self.basic or self.unclump_method != UN_NONE:
                     statistics.append(["Declumping smoothing filter size",
-                                       "%.1f" % (self._smoothing_filter_size())])
+                                       "%.1f" % self._smoothing_filter_size])
                     statistics.append(["Maxima suppression size",
-                                       "%.1f" % self._maxima_suppression_size()])
+                                       "%.1f" % (self._maxima_suppression_size / self._image_resize_factor)])
             workspace.display_data.image = image.pixel_data
             workspace.display_data.labeled_image = labeled_image
             workspace.display_data.size_excluded_labels = size_excluded_labeled_image
@@ -962,14 +962,33 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
         return labeled_image, object_count
 
+    @property
+    def _rescale(self):
+        return (self.basic or self.low_res_maxima) and self.size_range.min > 10
+
+    @property
+    def _image_resize_factor(self):
+        if self._rescale:
+            return 10.0 / float(self.size_range.min)
+
+        return 1.0
+
+    @property
     def _maxima_suppression_size(self):
-        if (self.basic or self.low_res_maxima.value) and self.automatic_suppression.value and self.size_range.min > 10:
+        if self._rescale and self.automatic_suppression.value:
             return 7
 
         if self.basic or self.automatic_suppression.value:
             return self.size_range.min / 1.5
 
-        return self.maxima_suppression_size.value
+        return self.maxima_suppression_size.value * self._image_resize_factor
+
+    @property
+    def _smoothing_filter_size(self):
+        if self.automatic_smoothing.value:
+            return 2.35 * self.size_range.min / 3.5
+
+        return self.smoothing_filter_size.value
 
     def _watershed(self, image, binary_image):
         if self.watershed_method.value == WA_NONE:
@@ -979,8 +998,11 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
         mask = image.mask
 
-        if self.size_range.min > 10 and (self.basic or self.low_res_maxima.value):
-            factor = 10.0 / float(self.size_range.min)
+        if self._rescale:
+            factor = self._image_resize_factor
+
+            if image.volumetric:
+                factor = (1.0, factor, factor)
 
             data = scipy.ndimage.zoom(data, factor, order=3)
 
@@ -988,7 +1010,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
             binary_image = scipy.ndimage.zoom(binary_image, factor, order=0)
 
-        markers = skimage.measure.label(self._markers(data, binary_image, mask))
+        markers = skimage.measure.label(self._markers(data, binary_image, mask, image.spacing))
 
         if self.basic or self.watershed_method.value in [WA_INTENSITY, WA_SHAPE]:
             if self.basic or self.watershed_method.value == WA_INTENSITY:
@@ -1017,22 +1039,30 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                 1.0
             )
 
-        if self.size_range.min > 10 and (self.basic or self.low_res_maxima.value):
-            watershed = skimage.transform.resize(watershed, image.pixel_data.shape, order=0, preserve_range=True)
+        if self._rescale:
+            watershed = skimage.transform.resize(
+                watershed,
+                image.pixel_data.shape,
+                order=0,
+                mode="edge",
+                preserve_range=True
+            )
 
         return skimage.measure.label(watershed, return_num=True)
 
-    def _markers(self, image, binary_image, mask):
+    def _markers(self, image, binary_image, mask, spacing):
         if self.unclump_method.value == UN_NONE:
             return binary_image
 
         if self.basic or self.unclump_method.value == UN_INTENSITY:
             declumping_image = image
 
-            filter_size = self._smoothing_filter_size()
+            filter_size = self._smoothing_filter_size
 
             if filter_size > 0:
                 sigma = filter_size / 2.35
+
+                sigma = numpy.multiply(sigma, numpy.divide(spacing[1], spacing))
 
                 declumping_image = skimage.filters.gaussian(declumping_image, sigma=sigma)
 
@@ -1047,7 +1077,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
             declumping_image += numpy.random.uniform(0, .001, declumping_image.shape)
 
-        maxima_suppression_size = max(1, int(self._maxima_suppression_size()))
+        maxima_suppression_size = max(1, int(self._maxima_suppression_size))
 
         if binary_image.ndim == 3:
             footprint = skimage.morphology.cube(maxima_suppression_size)
@@ -1152,13 +1182,6 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                     row_labels=[x[0] for x in workspace.display_data.statistics],
                     dimensions=dimensions
             )
-
-    def _smoothing_filter_size(self):
-        """Return the size of the smoothing filter, calculating it if in automatic mode"""
-        if self.automatic_smoothing.value:
-            return 2.35 * self.size_range.min / 3.5
-        else:
-            return self.smoothing_filter_size.value
 
     def is_object_identification_module(self):
         return True
