@@ -11,6 +11,7 @@ import scipy.sparse
 import skimage.filters
 import skimage.measure
 import skimage.morphology
+import skimage.segmentation
 import skimage.transform
 
 
@@ -856,7 +857,9 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
             labeled_image = centrosome.cpmorphology.fill_labeled_holes(labeled_image)
 
         # Relabel the image
-        labeled_image, object_count = centrosome.cpmorphology.relabel(labeled_image)
+        labeled_image, _, _ = skimage.segmentation.relabel_sequential(labeled_image)
+
+        object_count = len(numpy.unique(labeled_image)) - 1 if numpy.any(labeled_image == 0) else len(numpy.unique(labeled_image))
 
         if self.advanced:
             new_labeled_image, new_object_count = self.limit_object_count(labeled_image, object_count)
@@ -869,11 +872,6 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                 border_excluded_labeled_image = scipy.ndimage.label(border_excluded_mask, numpy.ones((3, 3), bool))[0]
                 object_count = new_object_count
                 labeled_image = new_labeled_image
-
-        # Make an outline image
-        outline_image = centrosome.outline.outline(labeled_image)
-        outline_size_excluded_image = centrosome.outline.outline(size_excluded_labeled_image)
-        outline_border_excluded_image = centrosome.outline.outline(border_excluded_labeled_image)
 
         if self.show_window:
             statistics = workspace.display_data.statistics
@@ -910,6 +908,7 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
             workspace.display_data.labeled_image = labeled_image
             workspace.display_data.size_excluded_labels = size_excluded_labeled_image
             workspace.display_data.border_excluded_labels = border_excluded_labeled_image
+            workspace.display_data.dimensions = image.dimensions
 
         # Add image measurements
         objname = self.y_name.value
@@ -1122,12 +1121,9 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
 
     def display(self, workspace, figure):
         if self.show_window:
+            dimensions = workspace.display_data.dimensions
             """Display the image and labeling"""
-            figure.set_subplots((2, 2))
-
-            orig_axes = figure.subplot(0, 0)
-            label_axes = figure.subplot(1, 0, sharexy=orig_axes)
-            outlined_axes = figure.subplot(0, 1, sharexy=orig_axes)
+            figure.set_subplots((2, 2), dimensions=dimensions)
 
             title = "Input image, cycle #%d" % (workspace.measurements.image_number,)
             image = workspace.display_data.image
@@ -1135,10 +1131,9 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
             size_excluded_labeled_image = workspace.display_data.size_excluded_labels
             border_excluded_labeled_image = workspace.display_data.border_excluded_labels
 
-            ax = figure.subplot_imshow_grayscale(0, 0, image, title)
+            ax = figure.subplot_imshow_grayscale(0, 0, image, title, dimensions=dimensions)
             figure.subplot_imshow_labels(1, 0, labeled_image,
-                                         self.y_name.value,
-                                         sharexy=ax)
+                                         self.y_name.value, dimensions=dimensions)
 
             cplabels = [
                 dict(name=self.y_name.value,
@@ -1149,12 +1144,14 @@ class IdentifyPrimaryObjects(cellprofiler.module.ImageSegmentation):
                      labels=[border_excluded_labeled_image])]
             title = "%s outlines" % self.y_name.value
             figure.subplot_imshow_grayscale(
-                    0, 1, image, title, cplabels=cplabels, sharexy=ax)
+                    0, 1, image, title, cplabels=cplabels, dimensions=dimensions)
 
             figure.subplot_table(
                     1, 1,
                     [[x[1]] for x in workspace.display_data.statistics],
-                    row_labels=[x[0] for x in workspace.display_data.statistics])
+                    row_labels=[x[0] for x in workspace.display_data.statistics],
+                    dimensions=dimensions
+            )
 
     def _smoothing_filter_size(self):
         """Return the size of the smoothing filter, calculating it if in automatic mode"""
