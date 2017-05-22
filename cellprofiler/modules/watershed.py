@@ -71,6 +71,13 @@ class Watershed(cellprofiler.module.ImageSegmentation):
             value=8,
         )
 
+        self.downsample = cellprofiler.setting.Integer(
+            doc="Optional. Downsample an n-dimensional image by local averaging.",
+            minval=1,
+            text="Downsample",
+            value=1
+        )
+
     def settings(self):
         __settings__ = super(Watershed, self).settings()
 
@@ -78,7 +85,8 @@ class Watershed(cellprofiler.module.ImageSegmentation):
             self.operation,
             self.markers_name,
             self.mask_name,
-            self.connectivity
+            self.connectivity,
+            self.downsample
         ]
 
     def visible_settings(self):
@@ -90,7 +98,8 @@ class Watershed(cellprofiler.module.ImageSegmentation):
 
         if self.operation.value == "Distance":
             __settings__ = __settings__ + [
-                self.connectivity
+                self.connectivity,
+                self.downsample
             ]
         else:
             __settings__ = __settings__ + [
@@ -116,8 +125,15 @@ class Watershed(cellprofiler.module.ImageSegmentation):
         if self.operation.value == "Distance":
             original_shape = x_data.shape
 
-            if x.volumetric:
-                x_data = skimage.transform.resize(x_data, (original_shape[0], 256, 256), order=0, mode="edge")
+            factor = self.downsample.value
+
+            if factor > 1:
+                if x.volumetric:
+                    factors = (factor, factor, factor)
+                else:
+                    factors = (factor, factor)
+
+                x_data = skimage.transform.downscale_local_mean(x_data, factors)
 
             distance = scipy.ndimage.distance_transform_edt(x_data)
 
@@ -141,7 +157,7 @@ class Watershed(cellprofiler.module.ImageSegmentation):
 
             y_data = y_data * x_data
 
-            if x.volumetric:
+            if factor > 1:
                 y_data = skimage.transform.resize(y_data, original_shape, order=0, mode="edge")
         else:
             markers_name = self.markers_name.value
