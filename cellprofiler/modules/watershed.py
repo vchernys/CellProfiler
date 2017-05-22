@@ -72,7 +72,7 @@ class Watershed(cellprofiler.module.ImageSegmentation):
         )
 
         self.downsample = cellprofiler.setting.Integer(
-            doc="Optional. Downsample an n-dimensional image by local averaging.",
+            doc="Downsample an n-dimensional image by local averaging. If the downsampling factor is 1, the image is not downsampled.",
             minval=1,
             text="Downsample",
             value=1
