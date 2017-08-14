@@ -61,7 +61,7 @@ setuptools.setup(
         "matplotlib",
         "MySQL-python",
         "numpy",
-        "prokaryote>=1.0.11",
+        "prokaryote",
         "python-bioformats",
         "pyzmq",
         "raven",
