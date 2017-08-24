@@ -6,7 +6,8 @@ addons:
       - python-pip
   apt: true
   directories: $HOME/.cache/pip
-dist: trusty
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
 env:
   - LC_ALL="en_US.UTF-8" CP_MYSQL_TEST_HOST="127.0.0.1" CP_MYSQL_TEST_USER="root" CP_MYSQL_TEST_PASSWORD=""
 group: deprecated-2017Q2
@@ -21,7 +22,18 @@ install:
 language: python
 notifications:
   email: false
+os:
+  - linux
+  - osx
+matrix:
+  allow_failures:
+    - os: osx
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+    - os: osx
+      osx_image: xcode8.3
 python: 2.7.12
 script: pytest
 services: mysql
-sudo: required
